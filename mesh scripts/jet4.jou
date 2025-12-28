@@ -1,0 +1,76 @@
+############################################## fiber -> use as jetCube 3 instead so that the center is symmetric
+reset
+############################################## geometry
+# {L = 25}
+# {D = 1} 
+# {R = D/2}
+
+brick x {L} y {L} z {45}
+webcut volume 1 with cylinder radius {R} axis z
+webcut Volume 2  offset_tool Surface 10  offset {0.5*R} inward merge 
+webcut Volume 1  offset_tool Surface 10  offset {5*R} outward merge 
+
+merge all
+
+################################################################### mesh 
+# inside inlet
+surface 18 scheme circle interval 4 fraction .5
+surface 18 interval 24
+mesh surface 18
+
+surface 15  scheme hole rad_intervals 6 bias 0.5
+mesh surface 15
+
+# outside inlet
+surface 25  scheme hole rad_intervals 15 bias -3
+mesh surface 25
+
+surface 22  scheme hole rad_intervals 10 bias -2
+mesh surface 22
+
+volume 4  redistribute nodes off 
+volume 4  scheme Sweep  source surface 18    target surface 19   sweep transform least squares 
+volume 4  autosmooth target off  fixed imprints off  smart smooth off 
+volume 4  interval 10
+mesh volume 4 
+
+volume 2 redistribute nodes off 
+volume 2 scheme Sweep  source surface 15    target surface 16   sweep transform least squares 
+volume 2 autosmooth target off  fixed imprints off  smart smooth off 
+mesh volume 2 
+
+volume 6 redistribute nodes off 
+volume 6 scheme Sweep  source surface 25    target surface 26   sweep transform least squares 
+volume 6 autosmooth target off  fixed imprints off  smart smooth off 
+mesh volume 6 
+
+volume 1 redistribute nodes off 
+volume 1 scheme Sweep  source surface 22    target surface 23   sweep transform least squares 
+volume 1 autosmooth target off  fixed imprints off  smart smooth off 
+mesh volume 1 
+
+
+############################################################ boundaries
+block 1 add volume all 
+block 1 element type HEX20
+
+sideset 1 add surface 15 18 
+sideset 1 name "inlet"
+
+sideset 2 add surface 22 25
+sideset 2 name "inletWall"
+
+sideset 3 add surface 16 19 23 26
+sideset 3 name "outlet"
+
+sideset 4 add surface 3 4 5 6
+sideset 4 name "sides"
+
+# export mesh as exodus file
+set exodus netcdf4 off
+set large exodus file on
+export mesh "/home/hailu/Desktop/jet4.exo"  dimension 3  overwrite 
+
+
+
+

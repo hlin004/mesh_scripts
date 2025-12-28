@@ -1,0 +1,63 @@
+################################################################### taylor couette mesh
+reset
+############################################################### geometry
+# {L = 1} 
+# {D_outer = 1}
+# {D_inner = 0.8}
+
+# {R_outer = D_outer/2} 
+# {R_inner = D_inner/2}
+# {d = (R_outer-R_inner)/2}
+
+create Cylinder height {L} radius {R_outer}
+create Cylinder height {L} radius {R_inner}
+
+chop volume 1 with volume 2
+delete volume 3
+
+create midsurface volume 4  surface 1 9  
+webcut volume 4  with sheet body 5 
+
+imprint all
+merge all
+################################################################ Mesh
+### outer circle
+surface 14  scheme hole rad_intervals 5 bias 1.3
+mesh surface 14
+
+### inner circle
+surface 17  scheme hole rad_intervals 5 bias -1.3
+mesh surface 17
+
+volume 4 6  redistribute nodes on 
+volume 4 scheme Sweep  source surface 14    target surface 15   sweep transform translate propagate bias  
+volume 6 scheme Sweep  source surface 17    target surface 18   sweep transform translate propagate bias  
+volume 4 6  autosmooth target off 
+volume 4 6  interval 10
+mesh volume 4 6 
+
+########################################################################### boundaries
+block 1 add volume all
+block 1 element type HEX20
+
+#inlet
+sideset 1 add surface 14 17
+sideset 1 name "inlet"
+
+#Outlet
+sideset 2 add surface 15 18
+sideset 2 name "outlet"
+
+#inner_wall
+sideset 3 add surface 9
+sideset 3 name "inner_wall"
+
+#outer_wall
+sideset 4 add surface 1
+sideset 4 name "outer_wall"
+
+# export mesh as exodus file
+set exodus netcdf4 off
+set large exodus file on
+export mesh "/home/hailu/Desktop/taylor_couette.exo"  dimension 3  overwrite 
+

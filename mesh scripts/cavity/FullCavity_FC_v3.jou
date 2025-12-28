@@ -1,0 +1,296 @@
+###################################################################
+###
+reset
+###ALL NUMBERS ARE NON-Dimensional###
+# {do_pause = 0}
+# {x_cav = 43.9} 
+# {y_cav = 43.9}
+# {z_cav = 129.9}
+
+# {inj_loc = 30.50725}
+# {rad_pipe = 0.5}
+# {sol_rad_pipe = 0.4601}
+# {sol_loc = 2.753623}
+
+#Cavity Geometry
+brick x {x_cav} y {y_cav} z {z_cav}
+move volume 1 z 64.95 include_merged
+
+#Injection Pipe at Arbitrary Size
+create cylinder height 64 radius {rad_pipe}
+rotate volume 2 angle 90 about x include_merged
+move Volume 2 z {inj_loc} include_merged 
+Volume 2 scale X 1.0 Y 1.2 Z 1.0 
+
+#Create Shear Layer
+#{thick1=0.1}
+#{rada = 0.5}
+#{radb = rada - thick1}
+create frustum height {y_cav-10.0} radius {rada} top {rad_pipe}
+
+rotate volume 3 angle 90 about x include_merged
+move Volume 3 x 0 y -5 z 0 include_merged 
+move Volume 3 z {inj_loc} include_merged
+
+delete volume 2
+
+sweep surface 12  vector 0 -1 0  distance 26 
+sweep surface 11  vector 0 1 0  distance 20 
+
+webcut volume 3  with plane from surface 5  
+webcut volume 3  with plane from surface 3  
+
+delete volume 4
+
+create surface curve 16  
+
+webcut volume 3  with plane from surface 21 
+delete body 6
+
+subtract volume 3 7 from volume 1 keep
+
+delete volume 1
+create Cylinder height 64 radius 4
+rotate Volume 9  angle 90  about X include_merged preview 
+rotate Volume 9  angle 90  about X include_merged 
+move Volume 9  z 30.50725 include_merged preview 
+move Volume 9  z 30.50725 include_merged 
+intersect volume 8 9 keep  preview 
+intersect volume 8 9 keep 
+subtract volume 9 from volume 8  keep 
+delete Volume 9
+delete Volume 8
+webcut volume 10 with plane from surface 23  
+
+create curve vertex 19 12
+create curve vertex 48 36
+
+imprint volume 7 with curve 69
+imprint volume 10 with curve 70
+
+#Make the Injection Pipe Smaller
+webcut volume 5 with plane yplane offset -30
+delete volume 5
+
+delete Curve 70 69
+
+brick x 15 y 70 z 15
+list Volume 14 geometry
+move Volume 14 x 0 y 0 z 30.507 include_merged preview 
+move Volume 14 x 0 y 0 z 30.507 include_merged 
+intersect volume 11 14  keep  preview 
+intersect volume 11 14  keep 
+delete Volume 14
+subtract volume 15  from volume 11  keep 
+delete Volume 11
+
+create curve vertex 37 48 
+imprint volume 12 with curve 127
+
+webcut volume 15 16 with plane from surface 45 
+
+webcut volume 18  with plane from surface 89  
+delete Curve 127
+webcut volume 18  with plane from surface 86  
+webcut volume 19  with plane from surface 88  
+
+webcut volume 22  with plane from surface 85  
+webcut volume 18  with plane from surface 88  
+webcut volume 24  with plane from surface 85  
+
+webcut volume 16  with plane from surface 83  
+webcut volume 16  with plane from surface 80  
+webcut volume 26  with plane from surface 82  
+webcut volume 16  with plane from surface 82  
+webcut volume 16  with plane from surface 79  
+webcut volume 26  with plane from surface 79  
+
+create cylinder height 30 radius {sol_rad_pipe}
+rotate volume 33 angle 90 about x include_merged
+move Volume 33 z {sol_loc} include_merged 
+Volume 33 scale X 1.0 Y 2 Z 1.0 
+
+subtract volume 33  from volume 26  keep 
+subtract volume 33  from volume 20  keep 
+delete Volume 26
+delete Volume 20
+
+webcut volume 33  with plane from surface 244  
+webcut volume 33  with plane from surface 240  
+webcut volume 33  with plane from surface 247  
+delete Volume 36
+
+brick x 2 y 80 z 2
+move Volume 39  z 2.753623 include_merged 
+intersect volume 34 35 39 keep 
+delete Volume 39
+subtract volume 40 41 from volume 34 35 keep 
+delete Volume 34 35
+
+webcut volume 25 43 23 32 42 29  with plane from surface 278 
+webcut volume 25 43 23 32 42 29  with plane from surface 279  
+
+imprint all
+merge all
+
+#Mesh
+#BL
+create boundary_layer 1
+modify boundary_layer 1 uniform height 0.02 growth 1.2 layers 3 
+modify boundary_layer 1 add curve 17 surface 19 
+modify boundary_layer 1 continuity on
+
+#Inlet Curve
+curve 17  interval 16
+curve 17  scheme equal
+curve 17  interval 16
+curve 17  scheme equal
+mesh curve 17 
+
+curve 49  interval 16
+curve 49 scheme equal
+mesh curve 49 
+
+surface 35 scheme hole rad_intervals 4 bias 0.0 
+mesh surface 35 
+
+reset curve 71 72
+curve 71 scheme bias fine size 0.2 factor 1.03 start vertex 12
+mesh curve 71
+
+curve 72 scheme bias fine size 0.2 factor 1.03 start vertex 36
+mesh curve 72
+
+refine face 53 57 61 1 5 9 13 17 21 25 29 33 37 41 45 49  numsplit 1 bias 1.0 depth 1 smooth
+
+volume 10  redistribute nodes off 
+volume 10  scheme Sweep  source surface 35    target surface 45   sweep transform translate propagate bias  
+volume 10  autosmooth target off 
+mesh volume 10 
+
+# Car
+#Refine
+refine mesh sheet edge 362  factor 0 
+
+paver cleanup extend
+surface 19  scheme pave
+delete mesh surface 19  propagate
+surface 19  scheme pave
+mesh surface 19 
+
+volume 7  redistribute nodes off 
+volume 7  scheme Sweep  source surface 19    target surface 22   sweep transform least squares 
+volume 7  autosmooth target on  fixed imprints off  smart smooth off 
+mesh volume 7 
+
+curve 76  scheme bias fine size 0.2 factor 1.00 start vertex 12 
+mesh curve 76 
+mesh Volume 13
+
+reset curve 23
+curve 23 scheme bias fine size 1.18219 coarse size 1.4 start vertex 11 
+mesh curve 23
+mesh Volume 3
+
+mesh Volume 12
+
+surface 62  scheme hole rad_intervals 2 bias 0.5 
+mesh surface 62
+
+curve 146 scheme bias fine size 0.2 factor 1.03 start vertex 70
+mesh curve 146
+curve 145 scheme bias fine size 0.2 factor 1.03 start vertex 69
+mesh curve 145
+curve 143 scheme bias fine size 0.2 factor 1.03 start vertex 68
+mesh curve 143
+curve 144 scheme bias fine size 0.2 factor 1.03 start vertex 67
+mesh curve 144
+
+mesh Volume 17
+mesh Volume 15
+
+reset volume 38
+reset curve 421
+curve 421 scheme bias fine size 1.18219 coarse size 1.4 start vertex 241	 
+mesh curve 421
+
+reset Surface 253
+surface 253  size auto factor 6
+surface 253 scheme circle interval 3 fraction 0.6
+mesh surface 253
+
+volume 38 redistribute nodes off 
+volume 38 scheme Sweep  source surface 253    target surface 257   sweep transform translate propagate bias  
+volume 38 autosmooth target off 
+mesh volume 38
+
+set dev on
+sheet edge 18374  dice interval 2
+set dev off
+
+reset volume 33
+reset curve 419
+curve 419 scheme bias fine size 0.2 factor 1.03 start vertex 237
+mesh curve 419
+
+volume 33  redistribute nodes off 
+volume 33  scheme Sweep  source surface 257    target surface 249   sweep transform least squares 
+volume 33  autosmooth target on  fixed imprints off  smart smooth off 
+mesh volume 33 
+
+reset curve 417
+curve 417 scheme bias fine size 0.2 factor 1.0 start vertex 239
+mesh curve 417
+
+volume 37  redistribute nodes off 
+volume 37  scheme Sweep  source surface 253    target surface 233   sweep transform translate propagate bias  
+volume 37  autosmooth target off 
+mesh volume 37 
+
+reset surface 269
+surface 269  scheme hole rad_intervals 3 bias 0.2 
+mesh surface 269 
+
+#461 463 460 462 
+#265 266 264 263
+
+reset curve 461
+curve 461 scheme bias fine size 0.2 factor 1.03 start vertex 265
+mesh curve 461
+
+reset curve 463
+curve 463 scheme bias fine size 0.2 factor 1.03 start vertex 266
+mesh curve 463
+
+reset curve 460
+curve 460 scheme bias fine size 0.2 factor 1.03 start vertex 264
+mesh curve 460
+
+reset curve 462
+curve 462 scheme bias fine size 0.2 factor 1.03 start vertex 263
+mesh curve 462
+
+volume 41  redistribute nodes off 
+volume 41  scheme Sweep  source surface 268    target surface 275   sweep transform translate propagate bias  
+volume 41  autosmooth target off 
+mesh volume 41 
+
+surface 408  size auto factor 5
+mesh surface 408 
+surface 413  size auto factor 5
+mesh surface 413 
+mesh Volume 55
+mesh Volume 56
+
+volume 52  redistribute nodes off 
+volume 52  scheme Sweep  source surface 280    target surface 379   sweep transform translate propagate bias  
+volume 52  autosmooth target off 
+mesh volume 52 
+
+volume 51  redistribute nodes off 
+volume 51  scheme Sweep  source surface 277    target surface 370   sweep transform translate propagate bias  
+volume 51  autosmooth target off 
+mesh volume 51 
+
+
+

@@ -1,0 +1,33 @@
+################################################################### circle in circle 
+reset
+############################################################### geometry
+# {R_outer =0.5} 
+# {R_inner = 0.1}
+# {d = (R_outer-R_inner)/2}
+
+create surface circle radius {R_outer} zplane 
+create surface circle radius {R_inner} zplane 
+
+subtract surface 2  from surface 1  
+
+imprint all
+merge all
+####################################################### mesh
+surface 3  scheme hole rad_intervals 10 bias -2 
+surface 3 size auto factor 2
+mesh surface 3
+
+########################################################################### boundaries
+block 1 add surface all
+block 1 element type QUAD8
+
+sideset 1 add curve 3
+sideset 1 name "inner_wall"
+
+sideset 2 add curve 1
+sideset 2 name "outer_wall"
+
+# export mesh as exodus file
+set exodus netcdf4 off
+set large exodus file on
+export mesh "/home/hailu/Desktop/circle.exo"  dimension 2  overwrite 

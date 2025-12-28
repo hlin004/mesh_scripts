@@ -1,0 +1,109 @@
+################################################################### flow over cylinder in 2D
+reset
+############################################################### geometry
+# {L = 1} 
+# {R = 0.15*L} 
+# {W = 4*L}
+# {box = 5*R}
+
+
+create surface rectangle width {W} height {L} zplane
+create surface circle radius {R} zplane
+create surface rectangle width {box} height {L} zplane
+create surface rectangle width {W} height {box} zplane
+
+move surface 2 location -1 0 0 include_merged
+move surface 3 location -1 0 0 include_merged
+
+webcut body 1 with sheet body 4
+webcut body 5 6 7 with sheet body 3
+
+delete body 3 4 
+subtract volume 2 from volume 1
+
+imprint all
+merge all
+
+
+################################################################ Mesh
+# inner circle
+reset curve 54
+curve 54  interval 24 scheme equal
+mesh curve 54 
+
+# inner square 
+curve 24 27 31 33  interval 6
+curve 24 27 31 33  scheme equal
+mesh curve 24 27 31 33
+
+surface 17  scheme hole rad_intervals 10 bias -2 
+mesh surface 17 
+
+# right horizontal
+curve 25 26 36 48 interval 20 scheme bias 1.1 start vertex 22 23 30 41
+mesh curve 25 26 36 48
+
+# left horizontal
+curve 28 29 38 46 interval 8 scheme bias 1.1 start vertex 33 25 24 38
+mesh curve 28 29 38 46
+
+# box outward
+curve 21 23 43 53 scheme equal
+mesh curve 21 23 43 53
+
+# top vertical 
+curve 15 16 34 37 interval 3 scheme bias 1.1 start vertex 14 25 22 15
+mesh curve 15 16 34 37
+
+# bot vertical 
+curve 18 19 46 47 interval 3 scheme bias 1.1 start vertex 17 24 23 16 
+mesh curve 18 19 46 47
+
+mesh surface 8 9 11 12 13 14 15 16
+
+########################################################################### boundaries
+block 1 add surface all
+block 1 element type QUAD8
+
+# inlet
+sideset 1 add curve 16 23 18
+sideset 1 name "inlet"
+
+# outlet
+sideset 2 add curve 15 21 19
+sideset 2 name "outlet"
+
+# top
+sideset 3 add curve 38 43 36
+sideset 3 name "top"
+
+# bot
+sideset 4 add curve 46 53 48
+sideset 4 name "bottom"
+
+# cylinder
+sideset 5 add curve 54
+sideset 5 name "cylinder"
+
+# export mesh as exodus file
+set exodus netcdf4 off
+set large exodus file on
+export mesh "/home/hailu/Desktop/cylinder.exo"  dimension 2  overwrite 
+############################################################ etc
+
+## inlet pipe
+#curve 4 2 10 interval 10 scheme dualbias 1.2
+#mesh curve 4 2 10
+#
+## top cavity
+#reset curve 649
+#curve 649 scheme bias fine size {stream_init} factor {stream_factor} start vertex 370
+#mesh curve 649
+#
+#create boundary_layer 1
+#modify boundary_layer 1 uniform height 0.01 growth 1.2 layers 4 
+#modify boundary_layer 1 add curve 10 surface 6 
+#modify boundary_layer 1 continuity on
+#
+#surface 6  size auto factor 4 propagate 
+#mesh surface 6 

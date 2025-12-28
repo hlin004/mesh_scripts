@@ -1,0 +1,234 @@
+###################################################################
+###
+reset
+###ALL NUMBERS ARE NON-Dimensional###
+# {do_pause = 0}
+# {x_cav = 43.9} 
+# {y_cav = 43.9}
+# {z_cav = 129.9}
+
+# {inj_loc = 30.50725}
+# {rad_pipe = 0.5}
+# {sol_rad_pipe = 0.4601}
+# {sol_loc = 2.753623}
+
+#Cavity Geometry
+brick x {x_cav} y {y_cav} z {z_cav}
+move volume 1 z 64.95 include_merged
+
+#Injection Pipe at Arbitrary Size
+create cylinder height 64 radius {rad_pipe}
+rotate volume 2 angle 90 about x include_merged
+move Volume 2 z {inj_loc} include_merged 
+Volume 2 scale X 1.0 Y 1.2 Z 1.0 
+
+#Create Shear Layer
+#{thick1=0.1}
+#{rada = 0.5}
+#{radb = rada - thick1}
+create frustum height {y_cav-10.0} radius {rada} top {rad_pipe}
+
+rotate volume 3 angle 90 about x include_merged
+move Volume 3 x 0 y -5 z 0 include_merged 
+move Volume 3 z {inj_loc} include_merged
+
+delete volume 2
+
+sweep surface 12  vector 0 -1 0  distance 26 
+sweep surface 11  vector 0 1 0  distance 20 
+
+webcut volume 3  with plane from surface 5  
+webcut volume 3  with plane from surface 3  
+
+delete volume 4
+
+create surface curve 16  
+
+webcut volume 3  with plane from surface 21 
+delete body 6
+
+subtract volume 3 7 from volume 1 keep
+
+delete volume 1
+create Cylinder height 64 radius 4
+rotate Volume 9  angle 90  about X include_merged preview 
+rotate Volume 9  angle 90  about X include_merged 
+move Volume 9  z 30.50725 include_merged preview 
+move Volume 9  z 30.50725 include_merged 
+intersect volume 8 9 keep  preview 
+intersect volume 8 9 keep 
+subtract volume 9 from volume 8  keep 
+delete Volume 9
+delete Volume 8
+webcut volume 10 with plane from surface 23  
+
+create curve vertex 19 12
+create curve vertex 48 36
+
+imprint volume 7 with curve 69
+imprint volume 10 with curve 70
+
+#Make the Injection Pipe Smaller
+webcut volume 5 with plane yplane offset -38.95
+delete volume 5
+
+delete Curve 70 69
+
+brick x 15 y 70 z 15
+list Volume 14 geometry
+move Volume 14 x 0 y 0 z 30.507 include_merged preview 
+move Volume 14 x 0 y 0 z 30.507 include_merged 
+intersect volume 11 14  keep  preview 
+intersect volume 11 14  keep 
+delete Volume 14
+subtract volume 15  from volume 11  keep 
+delete Volume 11
+
+create curve vertex 37 48 
+imprint volume 12 with curve 127
+
+webcut volume 15 16 with plane from surface 45 
+
+webcut volume 18  with plane from surface 89  
+delete Curve 127
+webcut volume 18  with plane from surface 86  
+webcut volume 19  with plane from surface 88  
+
+webcut volume 22  with plane from surface 85  
+webcut volume 18  with plane from surface 88  
+webcut volume 24  with plane from surface 85  
+
+webcut volume 16  with plane from surface 83  
+webcut volume 16  with plane from surface 80  
+webcut volume 26  with plane from surface 82  
+webcut volume 16  with plane from surface 82  
+webcut volume 16  with plane from surface 79  
+webcut volume 26  with plane from surface 79  
+
+create cylinder height 30 radius {sol_rad_pipe}
+rotate volume 33 angle 90 about x include_merged
+move Volume 33 z {sol_loc} include_merged 
+Volume 33 scale X 1.0 Y 2 Z 1.0 
+
+subtract volume 33  from volume 26  keep 
+subtract volume 33  from volume 20  keep 
+delete Volume 26
+delete Volume 20
+
+webcut volume 33  with plane from surface 244  
+webcut volume 33  with plane from surface 240  
+webcut volume 33  with plane from surface 247  
+delete Volume 36
+
+brick x 2 y 80 z 2
+move Volume 39  z 2.753623 include_merged 
+intersect volume 34 35 39 keep 
+delete Volume 39
+subtract volume 40 41 from volume 34 35 keep 
+delete Volume 34 35
+
+webcut volume 25 43 23 32 42 29  with plane from surface 278 
+webcut volume 25 43 23 32 42 29  with plane from surface 279  
+
+create planar surface with plane zplane offset 13.0 intersecting body 43 23 25 32 42 29  
+create planar surface with plane zplane offset 7.5 intersecting body 43 23 25 32 42 29 
+
+webcut volume 43 23 25 32 42 29  with plane from surface 425  
+delete Body 60
+
+webcut volume 60 61 62 63 64 65 with plane from surface 426 
+delete Body 61
+
+imprint all
+merge all
+
+#Mesh
+#BL
+# {stream_factor =  1.01}
+# {stream_init =  0.1}
+# {stream_init2 =  0.075}
+# {stream_init3 =  0.05}
+create boundary_layer 1
+modify boundary_layer 1 uniform height 0.01 growth 1.2 layers 4
+modify boundary_layer 1 add curve 17 surface 19 
+modify boundary_layer 1 continuity on
+
+#Inlet Curve
+reset curve 17
+curve 17  interval 28
+curve 17  scheme equal
+mesh curve 17 
+
+reset curve 49
+curve 49  interval 28
+curve 49 scheme equal
+mesh curve 49 
+
+#Important Surface to Refine
+surface 35 scheme hole rad_intervals 4 bias 0.0 
+mesh surface 35 
+
+reset curve 71 72
+curve 71 scheme bias fine size {stream_init} factor {stream_factor} start vertex 12
+mesh curve 71
+
+curve 72 scheme bias fine size {stream_init} factor {stream_factor} start vertex 36
+mesh curve 72
+
+refine face 65 69 73 77 81 85 89 93 97 101 105 109 61 57 53 49 45 41 37 33 29 25 21 17 13 9 5 1  numsplit 1 bias 1.0 depth 1 smooth
+
+delete Volume 12 10 7 3
+delete Volume 49 48 55 47 43 44 52 27 28 30 32 29 31 33 53 51 45 42 46 40 41 54 56 57 60 66 61 62 63 64 65 67 68 69 70 71 24 25 17 18 19 21 37 22 23 50 16 38 15
+
+webcut volume 13  with plane yplane offset -30.95
+
+imprint all
+merge all
+
+paver cleanup extend
+surface 19  scheme pave
+delete mesh surface 19  propagate
+surface 19  scheme pave
+mesh surface 19 
+
+surface 19  smooth scheme laplacian free
+smooth surface 19 
+
+curve 950  scheme bias fine size {stream_init2} factor 1.00 start vertex 12 
+mesh curve 950 
+mesh Volume 72
+
+curve 948  scheme bias fine size {stream_init2} factor 1.00 start vertex 519 
+mesh curve 948
+mesh Volume 13
+
+#unite volume all include_mesh
+
+block 1 add volume 13 72
+block 1 element type HEX20
+
+#Add SideSets
+
+#inlet
+sideset 1 add surface 53
+sideset 1 name "inlet"
+
+#Outlet
+sideset 2 add surface 19
+sideset 2 name "outlet"
+
+#Pipe Wall 1
+sideset 3 add surface 560
+sideset 3 name "wall 1"
+
+#Pipe Wall 2
+sideset 4 add surface 562
+sideset 4 name "wall 2"
+
+##export
+set exodus netcdf4 off
+set large exodus file on
+export mesh "/Users/spatel/Desktop/Projects/2024/NEUP/meshing/turbPipe_126K_Test.exo"  dimension 3  overwrite 
+
+
+

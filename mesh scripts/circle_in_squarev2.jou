@@ -1,0 +1,100 @@
+################################################################### circle in square 2D
+reset
+############################################################### geometry
+# {L = 1} 
+# {D = 0.25}
+# {R = D/2} 
+# {box = 5*R}
+
+create surface rectangle width {L} height {L} zplane
+create surface circle radius {R} zplane
+create surface rectangle width {box} height {box} zplane
+
+move Surface 2 3 y -0.125 include_merged 
+subtract surface 2 from surface 1 3 imprint 
+
+webcut body 1  with sheet body 3 group_results 
+delete body 4 
+
+webcut body 1  with plane normal to curve 15  close_to vertex 12  
+webcut body 5  with plane normal to curve 15  close_to vertex 15  
+webcut body 6 1  with plane normal to curve 3  close_to vertex 15  
+webcut body 1 6  with plane normal to curve 34  close_to vertex 14  
+
+create curve offset curve 11  distance 0.025 extended
+create curve offset curve 11  distance 0.1 extended
+
+webcut body 3  with loop curve 57 group_results 
+webcut body 3  with loop curve 58  group_results 
+
+
+imprint all
+merge all
+
+################################################################ Mesh
+# inner circles
+curve 11 57 58 interval 24 scheme equal
+mesh curve 11 57 58
+
+# inner square 
+curve 6 7 8 9  interval 6 scheme equal
+mesh curve 6 7 8 9
+
+# inner-most circle
+surface 22  scheme hole rad_intervals 10 
+mesh surface 22
+
+# mid circle
+surface 24 scheme hole rad_intervals 15 bias -1.5
+mesh surface 24
+
+# inner square
+surface 23  scheme hole rad_intervals 5 bias -1.3
+mesh surface 23
+
+# box outward
+curve 27 29 49 56  scheme copy source curve 6 7 8 9
+mesh curve 27 29 49 56
+
+# left and right horizontal
+curve 22 23 26 28 38 43 47 52 interval 5 scheme bias 1.1 start vertex 6 7 8 9 29 32 36 41
+mesh curve 22 23 26 28 38 43 47 52
+
+# top vertical 
+curve 20 21 39 45 interval 5 scheme bias 1.3 start vertex 6 7 20 21
+mesh curve 20 21 39 45
+
+# bot vertical 
+curve 31 32 33 51 interval 2 scheme bias 1.1 start vertex 8 9 24 25
+mesh curve 31 32 33 51
+
+mesh surface 10 11 14 16 17 18 19 20
+
+########################################################################### boundaries
+block 1 add surface all
+block 1 element type QUAD8
+
+# left
+sideset 1 add curve 21 27 31
+sideset 1 name "left"
+
+# right
+sideset 2 add curve 20 29 32
+sideset 2 name "right"
+
+# top
+sideset 3 add curve 43 47 49
+sideset 3 name "top"
+
+# bot
+sideset 4 add curve 38 52 56
+sideset 4 name "bottom"
+
+# cylinder
+sideset 5 add curve 11
+sideset 5 name "cylinder"
+
+# export mesh as exodus file
+#set exodus netcdf4 off
+#set large exodus file on
+#export mesh "/home/hailu/Desktop/circle_in_squarev2.exo"  dimension 2  overwrite 

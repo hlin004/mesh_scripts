@@ -1,0 +1,171 @@
+###################################################################
+reset
+###ALL NUMBERS ARE NON-Dimensional###
+# {do_pause = 0}
+# {x_cav = 43.9} 
+# {y_cav = 43.9}
+# {z_cav = 129.9}
+
+# {inj_loc = 30.50725}
+# {rad_pipe = 0.5}
+
+#Cavity Geometry
+brick x {x_cav} y {y_cav} z {z_cav}
+move volume 1 z 64.95 include_merged
+
+#Injection Pipe at Arbitrary Size
+create cylinder height 64 radius {rad_pipe}
+rotate volume 2 angle 90 about x include_merged
+move Volume 2 z {inj_loc} include_merged 
+Volume 2 scale X 1.0 Y 1.2 Z 1.0 
+
+#Create Shear Layer
+#{thick1=0.1}
+#{rada = 0.5}
+#{radb = rada - thick1}
+create frustum height {y_cav-10.0} radius {rada} top {rad_pipe}
+
+rotate volume 3 angle 90 about x include_merged
+move Volume 3 x 0 y -5 z 0 include_merged 
+move Volume 3 z {inj_loc} include_merged
+
+delete volume 2
+
+sweep surface 12  vector 0 -1 0  distance 26 
+sweep surface 11  vector 0 1 0  distance 20 
+
+webcut volume 3  with plane from surface 5  
+webcut volume 3  with plane from surface 3  
+
+delete volume 4
+
+create surface curve 16  
+
+webcut volume 3  with plane from surface 21 
+delete body 6
+
+subtract volume 3 7 from volume 1 keep
+
+delete volume 1
+create Cylinder height 64 radius 4
+rotate Volume 9  angle 90  about X include_merged preview 
+rotate Volume 9  angle 90  about X include_merged 
+move Volume 9  z 30.50725 include_merged preview 
+move Volume 9  z 30.50725 include_merged 
+intersect volume 8 9 keep  preview 
+intersect volume 8 9 keep 
+subtract volume 9 from volume 8  keep 
+delete Volume 9
+delete Volume 8
+webcut volume 10 with plane from surface 23  
+
+create curve vertex 19 12
+create curve vertex 48 36
+
+imprint volume 7 with curve 69
+imprint volume 10 with curve 70
+
+#Make the Injection Pipe Smaller
+webcut volume 5 with plane yplane offset -30
+delete volume 5
+
+delete Curve 70 69
+
+brick x 15 y 70 z 15
+list Volume 14 geometry
+move Volume 14 x 0 y 0 z 30.507 include_merged preview 
+move Volume 14 x 0 y 0 z 30.507 include_merged 
+intersect volume 11 14  keep  preview 
+intersect volume 11 14  keep 
+delete Volume 14
+subtract volume 15  from volume 11  keep 
+delete Volume 11
+
+create curve vertex 37 48 
+imprint volume 12 with curve 127
+
+webcut volume 15 16 with plane from surface 45 
+
+imprint all
+merge all
+
+#Mesh
+#BL
+create boundary_layer 1
+modify boundary_layer 1 uniform height 0.02 growth 1.2 layers 3 
+modify boundary_layer 1 add curve 17 surface 19 
+modify boundary_layer 1 continuity on
+
+#Inlet Curve
+curve 17  interval 16
+curve 17  scheme equal
+curve 17  interval 16
+curve 17  scheme equal
+mesh curve 17 
+
+curve 49  interval 16
+curve 49 scheme equal
+mesh curve 49 
+
+surface 35 scheme hole rad_intervals 4 bias 0.0 
+#surface 35 scheme pave
+mesh surface 35 
+
+curve 71 scheme bias fine size 0.2 factor 1.0 start vertex 12
+mesh curve 71
+
+curve 72 scheme bias fine size 0.2 factor 1.0 start vertex 36
+mesh curve 72
+
+refine face 53 57 61 1 5 9 13 17 21 25 29 33 37 41 45 49  numsplit 1 bias 1.0 depth 1 smooth
+
+volume 10  redistribute nodes off 
+volume 10  scheme Sweep  source surface 35    target surface 45   sweep transform translate propagate bias  
+volume 10  autosmooth target off 
+volume 10  redistribute nodes off 
+volume 10  scheme Sweep  source surface 35    target surface 45   sweep transform translate propagate bias  
+volume 10  autosmooth target off 
+mesh volume 10 
+
+#Refine
+refine mesh sheet edge 628  factor 0 
+#refine mesh sheet edge 27854  factor 0 
+
+paver cleanup extend
+surface 19  scheme pave
+delete mesh surface 19  propagate
+surface 19  scheme pave
+mesh surface 19 
+mesh Volume 7
+
+curve 76  scheme bias fine size 0.2 factor 1.00 start vertex 12 
+mesh curve 76 
+mesh Volume 13
+
+curve 23 scheme bias fine size 0.2 coarse size 0.5 start vertex 11 
+mesh curve 23
+
+mesh Volume 3
+
+curve 127 scheme bias fine size 0.2 coarse size 0.5 start vertex 48
+mesh curve 127
+mesh Volume 12
+
+surface 62  size auto factor 8
+mesh surface 62 
+undo group end
+mesh Volume 17
+
+mesh volume 15
+
+####Experiment Here
+
+surface 74  size 2
+mesh surface 74 
+undo group end
+mesh Volume 18
+mesh Volume 16
+
+unite volume all include_mesh
+
+

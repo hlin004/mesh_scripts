@@ -1,0 +1,577 @@
+###################################################################
+###
+reset
+###ALL NUMBERS ARE NON-Dimensional###
+# {do_pause = 0}
+# {x_cav = 43.9} 
+# {y_cav = 43.9}
+# {z_cav = 129.9}
+
+# {inj_loc = 30.50725}
+# {rad_pipe = 0.5}
+# {sol_rad_pipe = 0.4601}
+# {sol_loc = 2.753623}
+
+#Cavity Geometry
+brick x {x_cav} y {y_cav} z {z_cav}
+move volume 1 z 64.95 include_merged
+
+#Injection Pipe at Arbitrary Size
+create cylinder height 64 radius {rad_pipe}
+rotate volume 2 angle 90 about x include_merged
+move Volume 2 z {inj_loc} include_merged 
+Volume 2 scale X 1.0 Y 1.2 Z 1.0 
+
+#Create Shear Layer
+#{thick1=0.1}
+#{rada = 0.5}
+#{radb = rada - thick1}
+create frustum height {y_cav-10.0} radius {rada} top {rad_pipe}
+
+rotate volume 3 angle 90 about x include_merged
+move Volume 3 x 0 y -5 z 0 include_merged 
+move Volume 3 z {inj_loc} include_merged
+
+delete volume 2
+
+sweep surface 12  vector 0 -1 0  distance 26 
+sweep surface 11  vector 0 1 0  distance 20 
+
+webcut volume 3  with plane from surface 5  
+webcut volume 3  with plane from surface 3  
+
+delete volume 4
+
+create surface curve 16  
+
+webcut volume 3  with plane from surface 21 
+delete body 6
+
+subtract volume 3 7 from volume 1 keep
+
+delete volume 1
+create Cylinder height 64 radius 4
+rotate Volume 9  angle 90  about X include_merged preview 
+rotate Volume 9  angle 90  about X include_merged 
+move Volume 9  z 30.50725 include_merged preview 
+move Volume 9  z 30.50725 include_merged 
+intersect volume 8 9 keep  preview 
+intersect volume 8 9 keep 
+subtract volume 9 from volume 8  keep 
+delete Volume 9
+delete Volume 8
+webcut volume 10 with plane from surface 23  
+
+create curve vertex 19 12
+create curve vertex 48 36
+
+imprint volume 7 with curve 69
+imprint volume 10 with curve 70
+
+#Make the Injection Pipe Smaller
+webcut volume 5 with plane yplane offset -33.95
+delete volume 5
+
+delete Curve 70 69
+
+brick x 15 y 70 z 15
+list Volume 14 geometry
+move Volume 14 x 0 y 0 z 30.507 include_merged preview 
+move Volume 14 x 0 y 0 z 30.507 include_merged 
+intersect volume 11 14  keep  preview 
+intersect volume 11 14  keep 
+delete Volume 14
+subtract volume 15  from volume 11  keep 
+delete Volume 11
+
+create curve vertex 37 48 
+imprint volume 12 with curve 127
+
+webcut volume 15 16 with plane from surface 45 
+
+webcut volume 18  with plane from surface 89  
+delete Curve 127
+webcut volume 18  with plane from surface 86  
+webcut volume 19  with plane from surface 88  
+
+webcut volume 22  with plane from surface 85  
+webcut volume 18  with plane from surface 88  
+webcut volume 24  with plane from surface 85  
+
+webcut volume 16  with plane from surface 83  
+webcut volume 16  with plane from surface 80  
+webcut volume 26  with plane from surface 82  
+webcut volume 16  with plane from surface 82  
+webcut volume 16  with plane from surface 79  
+webcut volume 26  with plane from surface 79  
+
+create cylinder height 30 radius {sol_rad_pipe}
+rotate volume 33 angle 90 about x include_merged
+move Volume 33 z {sol_loc} include_merged 
+Volume 33 scale X 1.0 Y 2 Z 1.0 
+
+subtract volume 33  from volume 26  keep 
+subtract volume 33  from volume 20  keep 
+delete Volume 26
+delete Volume 20
+
+webcut volume 33  with plane from surface 244  
+webcut volume 33  with plane from surface 240  
+webcut volume 33  with plane from surface 247  
+delete Volume 36
+
+brick x 2 y 80 z 2
+move Volume 39  z 2.753623 include_merged 
+intersect volume 34 35 39 keep 
+delete Volume 39
+subtract volume 40 41 from volume 34 35 keep 
+delete Volume 34 35
+
+webcut volume 25 43 23 32 42 29  with plane from surface 278 
+webcut volume 25 43 23 32 42 29  with plane from surface 279  
+
+create planar surface with plane zplane offset 13.0 intersecting body 43 23 25 32 42 29  
+create planar surface with plane zplane offset 7.5 intersecting body 43 23 25 32 42 29 
+
+webcut volume 43 23 25 32 42 29  with plane from surface 425  
+delete Body 60
+
+webcut volume 60 61 62 63 64 65 with plane from surface 426 
+delete Body 61
+
+imprint all
+merge all
+
+#Mesh
+#BL
+create boundary_layer 1
+modify boundary_layer 1 uniform height 0.02 growth 1.2 layers 3 
+modify boundary_layer 1 add curve 17 surface 19 
+modify boundary_layer 1 continuity on
+
+#Inlet Curve
+curve 17  interval 16
+curve 17  scheme equal
+curve 17  interval 16
+curve 17  scheme equal
+mesh curve 17 
+
+curve 49  interval 16
+curve 49 scheme equal
+mesh curve 49 
+
+#Important Surface to Refine
+surface 35 scheme hole rad_intervals 4 bias 0.0 
+mesh surface 35 
+
+reset curve 71 72
+curve 71 scheme bias fine size 0.2 factor 1.03 start vertex 12
+mesh curve 71
+
+curve 72 scheme bias fine size 0.2 factor 1.03 start vertex 36
+mesh curve 72
+
+refine face 53 57 61 1 5 9 13 17 21 25 29 33 37 41 45 49  numsplit 1 bias 1.0 depth 1 smooth
+
+webcut volume 13  with plane yplane offset -25.95
+
+imprint all
+merge all
+
+volume 10  redistribute nodes off 
+volume 10  scheme Sweep  source surface 35    target surface 45   sweep transform translate propagate bias  
+volume 10  autosmooth target off 
+mesh volume 10 
+
+#Refine
+refine mesh sheet edge 362  factor 0 
+
+paver cleanup extend
+surface 19  scheme pave
+delete mesh surface 19  propagate
+surface 19  scheme pave
+mesh surface 19 
+
+volume 7  redistribute nodes off 
+volume 7  scheme Sweep  source surface 19    target surface 22   sweep transform least squares 
+volume 7  autosmooth target on  fixed imprints off  smart smooth off 
+mesh volume 7 
+
+curve 950 scheme bias fine size 0.2 factor 1.00 start vertex 12 
+mesh curve 950 
+mesh Volume 72
+
+reset curve 948
+curve 948 scheme bias fine size 0.2 factor 1.00 start vertex 519 
+mesh curve 948
+mesh Volume 13
+
+reset curve 23
+curve 23 scheme bias fine size 1.18219 coarse size 1.18219 start vertex 11 
+mesh curve 23
+mesh Volume 3
+
+mesh volume 12
+####Continue Here#####
+
+surface 62  scheme hole rad_intervals 2 bias 0.5 
+mesh surface 62
+
+curve 146 scheme bias fine size 0.2 factor 1.03 start vertex 70
+mesh curve 146
+curve 145 scheme bias fine size 0.2 factor 1.03 start vertex 69
+mesh curve 145
+curve 143 scheme bias fine size 0.2 factor 1.03 start vertex 68
+mesh curve 143
+curve 144 scheme bias fine size 0.2 factor 1.03 start vertex 67
+mesh curve 144
+
+mesh Volume 17
+mesh Volume 15
+
+reset volume 38
+reset curve 421
+curve 421 scheme bias fine size 1.18219 coarse size 1.18219 start vertex 241	 
+mesh curve 421
+
+reset Surface 253
+surface 253  size auto factor 6
+surface 253 scheme circle interval 3 fraction 0.6
+mesh surface 253
+
+volume 38 redistribute nodes off 
+volume 38 scheme Sweep  source surface 253    target surface 257   sweep transform translate propagate bias  
+volume 38 autosmooth target off 
+mesh volume 38
+
+set dev on
+sheet edge 20024 dice interval 2
+set dev off
+
+reset volume 33
+reset curve 419
+curve 419 scheme bias fine size 0.2 factor 1.03 start vertex 237
+mesh curve 419
+
+volume 33  redistribute nodes off 
+volume 33  scheme Sweep  source surface 257    target surface 249   sweep transform least squares 
+volume 33  autosmooth target on  fixed imprints off  smart smooth off 
+mesh volume 33 
+
+reset curve 417
+curve 417 scheme bias fine size 0.2 factor 1.0 start vertex 239
+mesh curve 417
+
+volume 37  redistribute nodes off 
+volume 37  scheme Sweep  source surface 253    target surface 233   sweep transform translate propagate bias  
+volume 37  autosmooth target off 
+mesh volume 37 
+
+reset surface 269
+surface 269  scheme hole rad_intervals 3 bias 0.2 
+mesh surface 269 
+
+mesh volume 40
+
+#461 463 460 462 
+#265 266 264 263
+
+reset curve 461
+curve 461 scheme bias fine size 0.2 factor 1.03 start vertex 265
+mesh curve 461
+
+reset curve 463
+curve 463 scheme bias fine size 0.2 factor 1.03 start vertex 266
+mesh curve 463
+
+reset curve 460
+curve 460 scheme bias fine size 0.2 factor 1.03 start vertex 264
+mesh curve 460
+
+reset curve 462
+curve 462 scheme bias fine size 0.2 factor 1.03 start vertex 263
+mesh curve 462
+
+volume 41  redistribute nodes off 
+volume 41  scheme Sweep  source surface 268    target surface 275   sweep transform translate propagate bias  
+volume 41  autosmooth target off 
+mesh volume 41 
+
+surface 408  size auto factor 5
+mesh surface 408 
+surface 413  size auto factor 5
+mesh surface 413 
+mesh Volume 55
+mesh Volume 56
+
+volume 52  redistribute nodes off 
+volume 52  scheme Sweep  source surface 280    target surface 379   sweep transform translate propagate bias  
+volume 52  autosmooth target off 
+mesh volume 52 
+
+volume 51  redistribute nodes off 
+volume 51  scheme Sweep  source surface 277    target surface 370   sweep transform translate propagate bias  
+volume 51  autosmooth target off 
+mesh volume 51 
+
+curve 785  interval 8
+curve 785  scheme equal
+surface 469  scheme pave
+surface 469  scheme pave
+mesh surface 469 
+
+reset Surface 528
+curve 885 870  interval 5
+curve 885 870  scheme equal
+curve 882  interval 16
+curve 882  scheme equal
+surface 528  scheme pave
+mesh surface 528 
+surface 528  smooth scheme laplacian 
+
+reset Surface 536
+curve 893 878   interval 9
+curve 893 878   scheme equal
+surface 536  scheme pave
+mesh surface 536 
+
+volume 70  redistribute nodes off 
+volume 70  scheme Sweep  source surface 536    target surface 494   sweep transform translate propagate bias  
+volume 70  autosmooth target off 
+mesh volume 70 
+
+volume 66  redistribute nodes off 
+volume 66  scheme Sweep  source surface 494    target surface 496   sweep transform translate propagate bias  
+volume 66  autosmooth target off 
+mesh volume 66 
+
+volume 64  redistribute nodes off 
+volume 64  scheme Sweep  source surface 528    target surface 490   sweep transform translate propagate bias  
+volume 64  autosmooth target off 
+mesh volume 64 
+
+volume 60  redistribute nodes off 
+volume 60  scheme Sweep  source surface 490    target surface 488   sweep transform translate propagate bias  
+volume 60  autosmooth target off 
+mesh volume 60 
+
+volume 42  redistribute nodes off 
+volume 42  scheme Sweep  source surface 469    target surface 431   sweep transform translate propagate bias  
+volume 42  autosmooth target off 
+mesh volume 42 
+
+volume 43  redistribute nodes off 
+volume 43  scheme Sweep  source surface 431    target surface 429   sweep transform translate propagate bias  
+volume 43  autosmooth target off 
+mesh volume 43 
+
+curve 574  interval 4
+curve 574  scheme equal
+curve 595  interval 4
+curve 595  scheme equal
+
+surface 350  scheme map
+mesh surface 350 
+mesh Volume 48
+
+volume 45  redistribute nodes off 
+volume 45  scheme Sweep  source surface 317    target surface 319   sweep transform translate propagate bias  
+volume 45  autosmooth target off 
+mesh volume 45
+
+###
+
+surface 162  size 3.0
+mesh surface 162 
+volume 24  redistribute nodes off 
+volume 24  scheme Sweep  source surface 162    target surface 164   sweep transform translate propagate bias  
+volume 24  autosmooth target off 
+mesh volume 24 
+
+surface 144  size 3.0
+mesh surface 144 
+volume 22  redistribute nodes off 
+volume 22  scheme Sweep  source surface 144    target surface 142   sweep transform translate propagate bias  
+volume 22  autosmooth target off 
+mesh volume 22
+
+volume 27  redistribute nodes off 
+volume 27  scheme Sweep  source surface 142    target surface 186   sweep transform translate propagate bias  
+volume 27  autosmooth target off 
+mesh volume 27 
+
+volume 28  redistribute nodes off 
+volume 28  scheme Sweep  source surface 164    target surface 189   sweep transform translate propagate bias  
+volume 28  autosmooth target off 
+mesh volume 28 
+
+surface 213 size 3.0
+mesh surface 213
+surface 209  size 3.0
+mesh surface 209 
+surface 221  size 3.0
+mesh surface 221 
+
+volume 16  redistribute nodes off 
+volume 16  scheme Sweep  source surface 213    target surface 122   sweep transform translate propagate bias  
+volume 16  autosmooth target off 
+mesh volume 16 
+
+volume 30  redistribute nodes off 
+volume 30  scheme Sweep  source surface 209    target surface 151   sweep transform translate propagate bias  
+volume 30  autosmooth target off 
+mesh volume 30 
+
+volume 31  redistribute nodes off 
+volume 31  scheme Sweep  source surface 221    target surface 133   sweep transform translate propagate bias  
+volume 31  autosmooth target off 
+mesh volume 31 
+
+volume 19  redistribute nodes off 
+volume 19  scheme Sweep  source surface 133    target surface 131   sweep transform translate propagate bias  
+volume 19  autosmooth target off 
+mesh volume 19 
+volume 18  redistribute nodes off 
+volume 18  scheme Sweep  source surface 151    target surface 153   sweep transform translate propagate bias  
+volume 18  autosmooth target off 
+mesh volume 18 
+volume 21  redistribute nodes off 
+volume 21  scheme Sweep  source surface 122    target surface 124   sweep transform translate propagate bias  
+volume 21  autosmooth target off 
+mesh volume 21 
+
+mesh surface 440 
+volume 23  redistribute nodes off 
+volume 23  scheme Sweep  source surface 440    target surface 438   sweep transform translate propagate bias  
+volume 23  autosmooth target off 
+mesh volume 23 
+
+mesh volume 32 29
+volume 25  redistribute nodes off 
+volume 25  scheme Sweep  source surface 450    target surface 448   sweep transform translate propagate bias  
+volume 25  autosmooth target off 
+mesh volume 25 
+
+surface 511  scheme auto 
+mesh surface 511 
+volume 62  redistribute nodes off 
+volume 62  scheme Sweep  source surface 511    target surface 509   sweep transform translate propagate bias  
+volume 62  autosmooth target off 
+mesh volume 62 
+
+surface 499  scheme auto 
+mesh surface 499 
+volume 61  redistribute nodes off 
+volume 61  scheme Sweep  source surface 499    target surface 501   sweep transform translate propagate bias  
+volume 61  autosmooth target off 
+mesh volume 61 
+
+volume 63  redistribute nodes off 
+volume 63  scheme Sweep  source surface 519    target surface 521   sweep transform translate propagate bias  
+volume 63  autosmooth target off 
+mesh volume 63 
+
+volume 65  redistribute nodes off 
+volume 65  scheme Sweep  source surface 531    target surface 541   sweep transform translate propagate bias  
+volume 65  autosmooth target off 
+mesh volume 65 
+
+mesh Volume 69 71
+
+volume 68  redistribute nodes off 
+volume 68  scheme Sweep  source surface 515    target surface 513   sweep transform translate propagate bias  
+volume 68  autosmooth target off 
+mesh volume 68
+
+volume 67  redistribute nodes off 
+volume 67  scheme Sweep  source surface 503    target surface 505   sweep transform translate propagate bias  
+volume 67  autosmooth target off 
+mesh volume 67 
+
+mesh Volume 54 57 47 49
+
+volume 53  redistribute nodes off 
+volume 53  scheme Sweep  source surface 390    target surface 391   sweep transform translate propagate bias  
+volume 53  autosmooth target off 
+mesh volume 53 
+volume 46  redistribute nodes off 
+volume 46  scheme Sweep  source surface 330    target surface 328   sweep transform translate propagate bias  
+volume 46  autosmooth target off 
+mesh volume 46 
+volume 50  redistribute nodes off 
+volume 50  scheme Sweep  source surface 369    target surface 368   sweep transform translate propagate bias  
+volume 50  autosmooth target off 
+mesh volume 50 
+volume 44  redistribute nodes off 
+volume 44  scheme Sweep  source surface 308    target surface 310   sweep transform translate propagate bias  
+volume 44  autosmooth target off 
+mesh volume 44 
+
+###Boundary Layer Refinements
+
+#Top
+set dev on
+sheet edge 79100  dice interval 2
+sheet edge 177114 dice interval 2
+sheet edge 254245  dice interval 2
+set dev off
+
+#Sides
+set dev on
+sheet edge 87637  dice interval 2
+sheet edge 387980  dice interval 2
+sheet edge 455292  dice interval 2
+set dev off
+
+set dev on
+sheet edge 79233  dice interval 2
+sheet edge 589791  dice interval 2
+sheet edge 657122  dice interval 2
+set dev off
+
+set dev on
+sheet edge  70570 dice interval 2
+sheet edge  786826 dice interval 2
+sheet edge  843371 dice interval 2
+set dev off
+
+unite volume 3 19 22 18 17 48 47 67 43 41 40 42 38 45 44 66 46 33 32 37 23 24 31 30 15 49 29 28 25 27 71 70 64 62 63 60 61 68 69 50 51 55 52 53 54 56 65 57 16 10 7 12 21  include_mesh
+
+block 1 add volume 19
+block 1 element type HEX20
+
+block 2 add volume 13 72
+block 2 element type HEX20
+
+#Add SideSets
+
+#inlet
+sideset 1 add surface 53
+sideset 1 name "inlet"
+
+#Sol-Valve Outlet 
+sideset 2 add surface 233
+sideset 2 name "outlet"
+
+#inlet pipe wall fixed temp
+sideset 3 add surface 560
+sideset 3 name "inlet_pipe_wall_temp"
+
+#inlet pipe wall insulated
+sideset 4 add surface 562
+sideset 4 name "inlet_pipe_wall_ins"
+
+#Cavity-Inlet Wall
+sideset 5 add surface 154 220 469 134 144 298 
+sideset 5 name "cavity_walls"
+
+#Sol-Valve Outlet Pipe wall
+sideset 6 add surface 256
+sideset 6 name "outlet_wall_pipe"
+
+##export
+set exodus netcdf4 off
+set large exodus file on
+export mesh "/Users/spatel/Desktop/Projects/2024/NEUP/meshing/FC_SolValve_200Kc.exo"  dimension 3  overwrite 
+
+# 177510 elements

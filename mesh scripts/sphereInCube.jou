@@ -1,0 +1,48 @@
+############################################## sphere in cube 
+reset
+############################################## geometry
+# {Rsphere = 0.1}
+# {box = 1}
+
+create sphere radius {Rsphere}
+brick x {box} y {box} z {box}
+
+subtract volume 1 from volume 2 imprint 
+
+################################################################### mesh pebble
+webcut volume 3  with plane xplane offset 0 
+webcut volume 3  with plane yplane offset 0  
+webcut volume 3  with plane zplane offset 0 
+delete volume 4 to 6
+
+volume 3  scheme polyhedron 
+volume 3 size auto factor 5 propagate 
+mesh volume 3
+
+
+Volume 3 copy reflect x 
+Volume 3 7 copy reflect z
+Volume 3 7 8 9 copy reflect y 
+
+merge all
+unite volume 3 7 8 9 10 11 12 13 include_mesh 
+############################################################ boundaries
+block 1 add volume all 
+block 1 element type HEX20
+
+sideset 1 add surface 56
+sideset 1 name "inlet"
+
+sideset 2 add surface 22
+sideset 2 name "outlet"
+
+sideset 3 add surface 34 35 47 67
+sideset 3 name "sides"
+
+sideset 4 add surface 37
+sideset 4 name "sphere"
+
+# export mesh as exodus file
+set exodus netcdf4 off
+set large exodus file on
+export mesh "/home/hailu/Desktop/pebbleInCube.exo"  dimension 3  overwrite 

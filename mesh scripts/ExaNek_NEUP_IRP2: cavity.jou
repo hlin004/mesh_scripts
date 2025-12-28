@@ -1,0 +1,20 @@
+# ExaNek_NEUP_IRP2: cavity
+###################################################################
+reset
+###################################################################
+# creating overall geometry
+brick x 60.2 y 179 z 60.4
+
+create Cylinder height 5 radius .65 
+rotate Volume 2 angle 90  about Y include_merged
+
+move Volume 1  y 89.5 include_merged
+move Volume 1  x 30.1 include_merged
+
+align volume 2  source surface 9  target surface 4   include_merged
+move Volume 2 y -89.5 include_merged
+move Volume 2 y 41.9 include_merged
+
+list volume 1 geometry
+list volume 2 geometry
+

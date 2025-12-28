@@ -1,0 +1,50 @@
+# testing inj_jet setup with similar mesh
+###################################################################
+reset
+###################################################################
+create Cylinder height 20 radius 5 
+rotate Volume 1 angle 90  about X include_merged
+
+create Cylinder height 5 radius 1 
+rotate Volume 2 angle 90  about X include_merged
+
+move Volume 1  y 20 include_merged
+move Volume 2  y 2.5 include_merged
+
+align volume 1  source surface 3  target surface 5   include_merged
+
+imprint all
+merge all
+
+#mesh
+surface 6 size auto factor 5
+surface 6 scheme circle interval 5 fraction 0.6
+mesh surface 6
+
+volume 2  redistribute nodes off 
+volume 2  scheme Sweep  source surface 6    target surface 5   sweep transform least squares 
+volume 2  autosmooth target on  fixed imprints off  smart smooth off 
+mesh volume 2 
+
+surface 7 scheme hole rad_intervals 5 bias -1
+mesh surface 7 
+
+volume 1  redistribute nodes off 
+volume 1  scheme Sweep  source surface 7 5    target surface 2   sweep transform least squares 
+volume 1  autosmooth target on  fixed imprints off  smart smooth off 
+mesh volume 1
+
+block 1 add volume all
+block 1 element type HEX20
+
+#inlet
+sideset 1 add surface 6 
+sideset 1 name "inlet"
+
+#outlet
+sideset 2 add surface 2
+sideset 2 name "outlet"
+
+#walls
+sideset 3 add surface 1 7 4
+sideset 3 name "walls"

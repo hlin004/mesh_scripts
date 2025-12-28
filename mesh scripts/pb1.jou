@@ -1,0 +1,96 @@
+############################################## sphere in pipe 
+reset
+############################################## geometry
+# {L = 1}
+# {Rcyl = 0.5} 
+# {Rsphere = 0.1}
+# {box = 3*Rsphere}
+
+create sphere radius {Rsphere}
+brick x {box} y {box} z {box}
+create Cylinder height {box} radius {Rcyl}
+create Cylinder height {L} radius {Rcyl}
+
+subtract volume 1 from volume 2 3 4 imprint 
+remove overlap volume 5 6 modify larger
+remove overlap volume 7 5 modify volume 7
+remove overlap volume 11 9 modify volume 11
+
+merge all
+imprint all
+
+################################################################### mesh pebble
+Volume 9 13 14 visibility off
+
+webcut volume 5  with plane xplane offset 0 
+webcut volume 5  with plane yplane offset 0  
+webcut volume 5  with plane zplane offset 0 
+delete volume 15 to 17
+
+volume 5  scheme polyhedron 
+volume 5 size auto factor 6 propagate 
+mesh volume 5
+
+
+Volume 5 copy reflect x 
+Volume 5 18 copy reflect z
+Volume 5 18 19 20 copy reflect y 
+
+merge all
+unite volume 5 18 19 20 21 22 23 24 include_mesh 
+
+Volume 9 13 14 visibility on
+################################################################### mesh outside
+merge all
+imprint all
+
+# middle cylinder
+curve 14  interval 72 scheme equal
+mesh curve 14 
+
+surface 29  size auto factor 6 propagate 
+mesh surface 29
+
+volume 9  redistribute nodes off 
+volume 9  scheme Sweep  source surface 29    target surface 28   sweep transform least squares 
+volume 9  autosmooth target off  fixed imprints off  smart smooth off 
+volume 9  size auto factor 5
+mesh volume 9 
+
+# side cylinders
+volume 13  redistribute nodes off 
+volume 13  scheme Sweep  source surface 28  52  target surface 12   sweep transform least squares 
+volume 13  autosmooth target off  fixed imprints off  smart smooth off 
+volume 13  size auto factor 5
+mesh volume 13
+
+volume 14  redistribute nodes off 
+volume 14  scheme Sweep  source surface 29  54  target surface 13   sweep transform least squares 
+volume 14  autosmooth target off  fixed imprints off  smart smooth off 
+volume 14  size auto factor 5
+mesh volume 14 
+
+merge all
+imprint all
+
+############################################################ boundaries
+block 1 add volume all 
+block 1 element type HEX20
+
+sideset 1 add surface 12
+sideset 1 name "inlet"
+
+sideset 2 add surface 13
+sideset 2 name "outlet"
+
+sideset 3 add surface 8 50 51
+sideset 3 name "cylinder"
+
+sideset 4 add surface 84
+sideset 4 name "sphere"
+
+# export mesh as exodus file
+#set exodus netcdf4 off
+#set large exodus file on
+#export mesh "/home/hailu/Desktop/pebbleInPipe.exo"  dimension 3  overwrite 
+

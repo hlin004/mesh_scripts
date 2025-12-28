@@ -1,0 +1,84 @@
+################################################################### circle in square 2D
+reset
+############################################################### geometry
+# {L = 1} 
+# {D = 0.25}
+# {R = D/2} 
+# {box = 6*R}
+
+
+create surface rectangle width {L} height {L} zplane
+create surface circle radius {R} zplane
+create surface rectangle width {box} height {box} zplane
+
+move Surface 2 3 y -0.125 include_merged 
+subtract surface 2 from surface 1 3 imprint 
+
+webcut body 1  with sheet body 3 group_results 
+delete body 4 
+
+webcut body 1  with plane normal to curve 14  close_to vertex 15  
+webcut body 1  with plane normal to curve 13  close_to vertex 6  
+webcut body 5  with plane normal to curve 2  close_to vertex 7
+webcut body 1  with plane normal to curve 4  close_to vertex 12  
+
+imprint all
+merge all
+
+
+################################################################ Mesh
+# inner circle
+reset curve 11
+curve 11  interval 24 scheme equal
+mesh curve 11 
+
+# inner square 
+curve 6 7 8 9  interval 6 scheme equal
+mesh curve 6 7 8 9
+
+surface 5  scheme hole rad_intervals 10 bias -1.5 
+mesh surface 5 
+
+
+# box outward
+curve 30 28 40  scheme copy source curve 7 6 9  
+mesh curve 30 28 40 
+
+# left and right horizontal
+curve 13 14 24 26 29 35 interval 3 scheme bias 1.1 start vertex 6 7 8 9 20 22
+mesh curve 13 14 24 26 29 35 
+
+# top vertical 
+curve 21 27 34 36 interval 5 scheme bias 1.1 start vertex 6 7 25 29
+mesh curve 21 27 34 36
+
+mesh surface 11 12 13 14 15
+
+########################################################################### boundaries
+block 1 add surface all
+block 1 element type QUAD8
+
+# left
+sideset 1 add curve 30 34
+sideset 1 name "left"
+
+# right
+sideset 2 add curve 36 40 
+sideset 2 name "right"
+
+# top
+sideset 3 add curve 24 28 26
+sideset 3 name "top"
+
+# bot
+sideset 4 add curve 8 13 14
+sideset 4 name "bottom"
+
+# cylinder
+sideset 5 add curve 11
+sideset 5 name "cylinder"
+
+# export mesh as exodus file
+set exodus netcdf4 off
+set large exodus file on
+export mesh "/home/hailu/Desktop/circle_in_square.exo"  dimension 2  overwrite 

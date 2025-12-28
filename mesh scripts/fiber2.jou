@@ -1,0 +1,66 @@
+############################################## fiber 
+reset
+############################################## geometry
+# {L = 0.5}
+# {D = 0.1} 
+# {R = D/2}
+
+brick x {L} y {L} z {L}
+webcut volume 1 with cylinder radius {R} axis x 
+webcut Volume 1  offset_tool Surface 10  offset 0.05 outward merge 
+delete volume 2  
+
+merge all
+
+################################################################### mesh 
+surface 18  scheme hole rad_intervals 8 bias -1
+surface 18 interval 24
+mesh surface 18
+
+surface 15  scheme hole rad_intervals 10 bias -1
+mesh surface 15
+
+volume 4  redistribute nodes off 
+volume 4  scheme Sweep  source surface 18    target surface 19   sweep transform least squares 
+volume 4  autosmooth target off  fixed imprints off  smart smooth off 
+volume 4  interval 10
+mesh volume 4 
+
+
+volume 1 redistribute nodes off 
+volume 1 scheme Sweep  source surface 15    target surface 16   sweep transform least squares 
+volume 1 autosmooth target off  fixed imprints off  smart smooth off 
+mesh volume 1 
+
+
+############################################################ boundaries
+block 1 add volume all 
+block 1 element type HEX20
+
+sideset 1 add surface 15 18 
+sideset 1 name "left"
+
+sideset 2 add surface 16 19 
+sideset 2 name "right"
+
+sideset 3 add surface 5
+sideset 3 name "top"
+
+sideset 4 add surface 3
+sideset 4 name "bottom"
+
+sideset 5 add surface 1
+sideset 5 name "front"
+
+sideset 6 add surface 2
+sideset 6 name "back"
+
+sideset 7 add surface 7
+sideset 7 name "cylinder"
+
+# export mesh as exodus file
+set exodus netcdf4 off
+set large exodus file on
+export mesh "/home/hailu/Desktop/fiber2.exo"  dimension 3  overwrite 
+
+

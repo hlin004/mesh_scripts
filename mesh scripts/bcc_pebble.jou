@@ -1,0 +1,126 @@
+############################################## simple pebble bed with bcc structure
+reset
+############################################## single pebble
+# {a = 1} 
+# {r = ((3**0.5)/4)*a - 0.1}
+
+brick x {a} y {a} z {a}
+create sphere radius {r}
+
+subtract volume 2  from volume 1  
+
+webcut body 1  with plane xplane offset 0 preview 
+webcut body 1  with plane xplane offset 0 
+webcut body 1  with plane yplane offset 0 preview 
+webcut body 1  with plane yplane offset 0 
+webcut body 1  with plane zplane offset 0 preview 
+webcut body 1  with plane zplane offset 0 
+delete body 3 to 5
+
+volume 3  scheme polyhedron 
+volume 3 size auto factor 3 propagate 
+mesh volume 3
+
+Volume all copy reflect x 
+Volume all copy reflect y 
+Volume all copy reflect z 
+
+merge all
+unite volume all include_mesh 
+draw hex all
+
+
+############################################## bcc pebble split
+reset
+##############################################
+# {a = 1} 
+# {r = ((3**0.5)/4)*a-0.04*a}
+
+brick x {a} y {a} z {a}
+create sphere radius {r}
+create sphere radius {r}
+create sphere radius {r}
+create sphere radius {r}
+create sphere radius {r}
+create sphere radius {r}
+create sphere radius {r}
+create sphere radius {r}
+create sphere radius {r}
+
+move Volume 3 location vertex 3  include_merged 
+move Volume 4 location vertex 8  include_merged 
+move Volume 5 location vertex 5  include_merged 
+move Volume 6 location vertex 2  include_merged 
+move Volume 7 location vertex 4  include_merged 
+move Volume 8 location vertex 7  include_merged 
+move Volume 9 location vertex 6  include_merged 
+move Volume 10 location vertex 1  include_merged 
+
+subtract volume 2 3 4 5 6 7 8 9 10 from volume 1  
+
+webcut body 1  with plane xplane offset 0 
+webcut body 1  with plane yplane offset 0 
+webcut body 1  with plane zplane offset 0 
+delete volume 11 to 13
+
+
+volume 14  scheme polyhedron 
+volume 14 size auto factor 5 propagate 
+mesh volume 14
+#refine volume 14  numsplit 1 bias 1.0 depth 1 smooth
+
+Volume all copy reflect x 
+Volume all copy reflect y 
+Volume all copy reflect z 
+
+merge all
+unite volume all include_mesh 
+draw hex all
+
+############################################## bcc pebble split refined
+reset
+##############################################
+# {a = 1} 
+# {r = ((3**0.5)/4)*a-0.02*a}
+
+brick x {a} y {a} z {a}
+create sphere radius {r}
+create sphere radius {r}
+create sphere radius {r}
+create sphere radius {r}
+create sphere radius {r}
+create sphere radius {r}
+create sphere radius {r}
+create sphere radius {r}
+create sphere radius {r}
+
+move Volume 3 location vertex 3  include_merged 
+move Volume 4 location vertex 8  include_merged 
+move Volume 5 location vertex 5  include_merged 
+move Volume 6 location vertex 2  include_merged 
+move Volume 7 location vertex 4  include_merged 
+move Volume 8 location vertex 7  include_merged 
+move Volume 9 location vertex 6  include_merged 
+move Volume 10 location vertex 1  include_merged 
+
+subtract volume 2 3 4 5 6 7 8 9 10 from volume 1  
+
+webcut body 1  with plane xplane offset 0 
+webcut body 1  with plane yplane offset 0 
+webcut body 1  with plane zplane offset 0 
+delete volume 11 to 13
+
+# mesh the curves with dual bias?
+# different scheme?
+volume 14  scheme polyhedron 
+volume 14 size auto factor 5 propagate 
+mesh volume 14
+#refine volume 14  numsplit 1 bias 1.0 depth 1 smooth
+
+Volume all copy reflect x 
+Volume all copy reflect y 
+Volume all copy reflect z 
+
+merge all
+unite volume all include_mesh 
+draw hex all

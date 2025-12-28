@@ -1,0 +1,684 @@
+###################################################################
+###
+reset
+###ALL NUMBERS ARE NON-Dimensional###
+# {do_pause = 0}
+# {x_cav = 43.9} 
+# {y_cav = 43.9}
+# {z_cav = 129.9}
+
+# {inj_loc = 30.50725}
+# {rad_pipe = 0.5}
+# {sol_rad_pipe = 0.4601}
+# {sol_loc = 2.753623}
+
+#Cavity Geometry
+brick x {x_cav} y {y_cav} z {z_cav}
+move volume 1 z 64.95 include_merged
+
+#Injection Pipe at Arbitrary Size
+create cylinder height 64 radius {rad_pipe}
+rotate volume 2 angle 90 about x include_merged
+move Volume 2 z {inj_loc} include_merged 
+Volume 2 scale X 1.0 Y 1.2 Z 1.0 
+
+#Create Shear Layer
+#{thick1=0.1}
+#{rada = 0.5}
+#{radb = rada - thick1}
+create frustum height {y_cav-10.0} radius {rada} top {rad_pipe}
+
+rotate volume 3 angle 90 about x include_merged
+move Volume 3 x 0 y -5 z 0 include_merged 
+move Volume 3 z {inj_loc} include_merged
+
+delete volume 2
+
+sweep surface 12  vector 0 -1 0  distance 26 
+sweep surface 11  vector 0 1 0  distance 20 
+
+webcut volume 3  with plane from surface 5  
+webcut volume 3  with plane from surface 3  
+
+delete volume 4
+
+create surface curve 16  
+
+webcut volume 3  with plane from surface 21 
+delete body 6
+
+subtract volume 3 7 from volume 1 keep
+
+delete volume 1
+create Cylinder height 64 radius 4
+rotate Volume 9  angle 90  about X include_merged preview 
+rotate Volume 9  angle 90  about X include_merged 
+move Volume 9  z 30.50725 include_merged preview 
+move Volume 9  z 30.50725 include_merged 
+intersect volume 8 9 keep  preview 
+intersect volume 8 9 keep 
+subtract volume 9 from volume 8  keep 
+delete Volume 9
+delete Volume 8
+webcut volume 10 with plane from surface 23  
+
+create curve vertex 19 12
+create curve vertex 48 36
+
+imprint volume 7 with curve 69
+imprint volume 10 with curve 70
+
+#Make the Injection Pipe Smaller
+webcut volume 5 with plane yplane offset -30
+delete volume 5
+
+delete Curve 70 69
+
+brick x 15 y 70 z 15
+list Volume 14 geometry
+move Volume 14 x 0 y 0 z 30.507 include_merged preview 
+move Volume 14 x 0 y 0 z 30.507 include_merged 
+intersect volume 11 14  keep  preview 
+intersect volume 11 14  keep 
+delete Volume 14
+subtract volume 15  from volume 11  keep 
+delete Volume 11
+
+create curve vertex 37 48 
+imprint volume 12 with curve 127
+
+webcut volume 15 16 with plane from surface 45 
+
+webcut volume 18  with plane from surface 89  
+delete Curve 127
+webcut volume 18  with plane from surface 86  
+webcut volume 19  with plane from surface 88  
+
+webcut volume 22  with plane from surface 85  
+webcut volume 18  with plane from surface 88  
+webcut volume 24  with plane from surface 85  
+
+webcut volume 16  with plane from surface 83  
+webcut volume 16  with plane from surface 80  
+webcut volume 26  with plane from surface 82  
+webcut volume 16  with plane from surface 82  
+webcut volume 16  with plane from surface 79  
+webcut volume 26  with plane from surface 79  
+
+create cylinder height 30 radius {sol_rad_pipe}
+rotate volume 33 angle 90 about x include_merged
+move Volume 33 z {sol_loc} include_merged 
+Volume 33 scale X 1.0 Y 2 Z 1.0 
+
+subtract volume 33  from volume 26  keep 
+subtract volume 33  from volume 20  keep 
+delete Volume 26
+delete Volume 20
+
+webcut volume 33  with plane from surface 244  
+webcut volume 33  with plane from surface 240  
+webcut volume 33  with plane from surface 247  
+delete Volume 36
+
+brick x 2 y 80 z 2
+move Volume 39  z 2.753623 include_merged 
+intersect volume 34 35 39 keep 
+delete Volume 39
+subtract volume 40 41 from volume 34 35 keep 
+delete Volume 34 35
+
+webcut volume 25 43 23 32 42 29  with plane from surface 278 
+webcut volume 25 43 23 32 42 29  with plane from surface 279  
+
+create planar surface with plane zplane offset 13.0 intersecting body 43 23 25 32 42 29  
+create planar surface with plane zplane offset 7.5 intersecting body 43 23 25 32 42 29 
+
+webcut volume 43 23 25 32 42 29  with plane from surface 425  
+delete Body 60
+
+webcut volume 60 61 62 63 64 65 with plane from surface 426 
+delete Body 61
+
+imprint all
+merge all
+
+#Mesh
+#BL
+# {stream_factor =  1.01}
+# {stream_init =  0.1}
+create boundary_layer 1
+modify boundary_layer 1 uniform height 0.02 growth 1.2 layers 3 
+modify boundary_layer 1 add curve 17 surface 19 
+modify boundary_layer 1 continuity on
+
+#Inlet Curve
+reset curve 17
+curve 17  interval 28
+curve 17  scheme equal
+mesh curve 17 
+
+reset curve 49
+curve 49  interval 28
+curve 49 scheme equal
+mesh curve 49 
+
+#Important Surface to Refine
+surface 35 scheme hole rad_intervals 4 bias 0.0 
+mesh surface 35 
+
+reset curve 71 72
+curve 71 scheme bias fine size {stream_init} factor {stream_factor} start vertex 12
+mesh curve 71
+
+curve 72 scheme bias fine size {stream_init} factor {stream_factor} start vertex 36
+mesh curve 72
+
+refine face 65 69 73 77 81 85 89 93 97 101 105 109 61 57 53 49 45 41 37 33 29 25 21 17 13 9 5 1  numsplit 1 bias 1.0 depth 1 smooth
+
+volume 10  redistribute nodes off 
+volume 10  scheme Sweep  source surface 35    target surface 45   sweep transform translate propagate bias  
+volume 10  autosmooth target off 
+mesh volume 10 
+
+paver cleanup extend
+surface 19  scheme pave
+delete mesh surface 19  propagate
+surface 19  scheme pave
+mesh surface 19 
+
+volume 7  redistribute nodes off 
+volume 7  scheme Sweep  source surface 19    target surface 22   sweep transform least squares 
+volume 7  autosmooth target on  fixed imprints off  smart smooth off 
+mesh volume 7 
+
+curve 76  scheme bias fine size {stream_init} factor 1.00 start vertex 12 
+mesh curve 76 
+mesh Volume 13
+
+reset curve 23
+curve 23 scheme bias fine size 0.45 coarse size 0.7 start vertex 11 
+mesh curve 23
+mesh Volume 3
+mesh Volume 12
+
+reset surface 62
+surface 62  size auto factor 4
+mesh surface 62 
+
+reset curve 145 143 146 144
+curve 145 scheme bias fine size {stream_init} factor {stream_factor} start vertex 69
+mesh curve 145
+
+curve 146 scheme bias fine size {stream_init} factor {stream_factor} start vertex 70
+mesh curve 146
+
+curve 144 scheme bias fine size {stream_init} factor {stream_factor} start vertex 67
+mesh curve 144
+
+curve 143 scheme bias fine size {stream_init} factor {stream_factor} start vertex 68
+mesh curve 143
+
+volume 17  redistribute nodes off 
+volume 17  scheme Sweep  source surface 62    target surface 78   sweep transform translate propagate bias  
+volume 17  autosmooth target off 
+mesh volume 17 
+
+
+mesh Volume 15
+
+reset volume 38
+reset curve 421
+curve 421 scheme bias fine size 0.45 coarse size 0.7  start vertex 241	 
+mesh curve 421
+
+reset Surface 253
+surface 253  size auto factor 5
+surface 253 scheme circle interval 4 fraction 0.6
+mesh surface 253
+
+volume 38 redistribute nodes off 
+volume 38 scheme Sweep  source surface 253    target surface 257   sweep transform translate propagate bias  
+volume 38 autosmooth target off 
+mesh volume 38
+
+set dev on
+sheet edge 68072  dice interval 2
+sheet edge 82122  dice interval 2
+set dev off
+
+reset volume 33
+reset curve 419
+curve 419 scheme bias fine size {stream_init} factor {stream_factor} start vertex 237
+mesh curve 419
+
+volume 33  redistribute nodes off 
+volume 33  scheme Sweep  source surface 257    target surface 249   sweep transform least squares 
+volume 33  autosmooth target on  fixed imprints off  smart smooth off 
+mesh volume 33 
+
+reset curve 417
+curve 417 scheme bias fine size 0.1 factor 1.0 start vertex 239
+mesh curve 417
+
+volume 37  redistribute nodes off 
+volume 37  scheme Sweep  source surface 253    target surface 233   sweep transform translate propagate bias  
+volume 37  autosmooth target off 
+mesh volume 37 
+
+reset surface 269
+surface 269  scheme hole rad_intervals 5 bias 0.2 
+mesh surface 269 
+
+reset curve 446
+curve 446 scheme bias fine size 0.45 coarse size 0.7 start vertex 255 
+mesh curve 446
+
+reset curve 448
+curve 448 scheme bias fine size 0.45 coarse size 0.7 start vertex 256 
+mesh curve 448
+
+reset curve 445
+curve 445 scheme bias fine size 0.45 coarse size 0.7 start vertex 254 
+mesh curve 445
+
+reset curve 447
+curve 447 scheme bias fine size 0.45 coarse size 0.7 start vertex 253 
+mesh curve 447
+
+volume 40  redistribute nodes off 
+volume 40  scheme Sweep  source surface 269    target surface 268   sweep transform translate propagate bias  
+volume 40  autosmooth target off 
+mesh volume 40 
+
+
+###
+reset curve 461
+curve 461 scheme bias fine size {stream_init} factor {stream_factor} start vertex 265
+mesh curve 461
+
+reset curve 463
+curve 463 scheme bias fine size {stream_init} factor {stream_factor} start vertex 266
+mesh curve 463
+
+reset curve 460
+curve 460 scheme bias fine size {stream_init} factor {stream_factor} start vertex 264
+mesh curve 460
+
+reset curve 462
+curve 462 scheme bias fine size {stream_init} factor {stream_factor} start vertex 263
+mesh curve 462
+
+volume 41  redistribute nodes off 
+volume 41  scheme Sweep  source surface 268    target surface 275   sweep transform translate propagate bias  
+volume 41  autosmooth target off 
+mesh volume 41 
+
+###Left Off here
+reset Surface 413 408
+surface 413 408 size auto factor 5
+surface 413 408 scheme map
+mesh surface 413 408
+
+volume 55  redistribute nodes off 
+volume 55  scheme Sweep  source surface 408    target surface 380   sweep transform translate propagate bias  
+volume 55  autosmooth target off 
+mesh volume 55 
+
+volume 56  redistribute nodes off 
+volume 56  scheme Sweep  source surface 413    target surface 378   sweep transform translate propagate bias  
+volume 56  autosmooth target off 
+mesh volume 56 
+
+surface 469  size auto factor 5
+mesh surface 469 
+surface 528  size auto factor 4
+mesh surface 528 
+surface 536  size auto factor 4
+mesh surface 536 
+
+mesh Volume 42
+mesh Volume 64
+
+surface 525  size auto factor 5
+mesh surface 525 
+mesh Volume 70
+
+volume 43  redistribute nodes off 
+volume 43  scheme Sweep  source surface 431    target surface 429   sweep transform translate propagate bias  
+volume 43  autosmooth target off 
+mesh volume 43 
+
+volume 60  redistribute nodes off 
+volume 60  scheme Sweep  source surface 490    target surface 488   sweep transform translate propagate bias  
+volume 60  autosmooth target off 
+mesh volume 60 
+
+reset curve 633
+curve 633 scheme bias fine size {stream_init} factor {stream_factor} start vertex 362
+mesh curve 633
+
+reset curve 529
+curve 529 scheme bias fine size {stream_init} factor {stream_factor} start vertex 311
+mesh curve 529
+
+volume 52  redistribute nodes off 
+volume 52  scheme Sweep  source surface 380    target surface 381   sweep transform translate propagate bias  
+volume 52  autosmooth target off 
+mesh volume 52 
+
+reset curve 613
+curve 613 scheme bias fine size {stream_init} factor {stream_factor} start vertex 351
+mesh curve 613
+
+reset curve 515
+curve 515 scheme bias fine size {stream_init} factor {stream_factor} start vertex 306
+mesh curve 515
+
+volume 51  redistribute nodes off 
+volume 51  scheme Sweep  source surface 378    target surface 376   sweep transform translate propagate bias  
+volume 51  autosmooth target off 
+mesh volume 51 
+
+volume 66  redistribute nodes off 
+volume 66  scheme Sweep  source surface 494    target surface 496   sweep transform translate propagate bias  
+volume 66  autosmooth target off 
+mesh volume 66 
+
+#Far Field
+# {ff_size =  0.7}
+
+surface 124 size {ff_size}
+mesh surface 124
+
+surface 122  size {ff_size}
+mesh surface 122 
+
+volume 21  redistribute nodes off 
+volume 21  scheme Sweep  source surface 88    target surface 123   sweep transform translate propagate bias  
+volume 21  autosmooth target off 
+mesh volume 21 
+
+surface 213  size {ff_size}
+mesh surface 213 
+
+volume 16  redistribute nodes off 
+volume 16  scheme Sweep  source surface 80    target surface 214   sweep transform translate propagate bias  
+volume 16  autosmooth target off 
+mesh volume 16
+
+surface 186  size 0.75
+mesh surface 186 
+
+surface 142  size 0.75
+mesh surface 142 
+
+volume 27  redistribute nodes off 
+volume 27  scheme Sweep  source surface 79    target surface 185   sweep transform translate propagate bias  
+volume 27  autosmooth target off 
+mesh volume 27 
+ 
+mesh Volume 31
+
+reset curve 175
+curve 175 scheme bias fine size {stream_init} factor {stream_factor} start vertex 86
+mesh curve 175
+
+reset curve 216
+curve 216 scheme bias fine size {stream_init} factor {stream_factor} start vertex 138
+mesh curve 216
+
+volume 19  redistribute nodes off 
+volume 19  scheme Sweep  source surface 133    target surface 131   sweep transform translate propagate bias  
+volume 19  autosmooth target off 
+mesh volume 19 
+
+reset curve 178
+curve 178 scheme bias fine size {stream_init} factor {stream_factor} start vertex 83
+mesh curve 178
+
+reset curve 248
+curve 248 scheme bias fine size {stream_init} factor {stream_factor} start vertex 152
+mesh curve 248
+
+surface 153 size {ff_size}
+mesh surface 153
+
+volume 18  redistribute nodes off 
+volume 18  scheme Sweep  source surface 153    target surface 151   sweep transform translate propagate bias  
+volume 18  autosmooth target off 
+mesh volume 18 
+
+mesh volume 30
+
+##
+surface 189 size 0.75
+volume 28  redistribute nodes off 
+volume 28  scheme Sweep  source surface 191    target surface 170   sweep transform translate propagate bias  
+volume 28  autosmooth target off 
+mesh volume 28 
+
+reset curve 261
+curve 261 scheme bias fine size {stream_init} factor {stream_factor} start vertex 159
+mesh curve 261
+
+volume 24  redistribute nodes off 
+volume 24  scheme Sweep  source surface 164    target surface 162   sweep transform translate propagate bias  
+volume 24  autosmooth target off 
+mesh volume 24 
+
+reset curve 229
+curve 229 scheme bias fine size {stream_init} factor {stream_factor} start vertex 144
+mesh curve 229
+
+volume 22  redistribute nodes off 
+volume 22  scheme Sweep  source surface 142    target surface 144   sweep transform translate propagate bias  
+volume 22  autosmooth target off 
+mesh volume 22 
+
+mesh Volume 32 29 65 71 63 69 57 54
+
+reset curve 737
+curve 737 scheme bias fine size {stream_init} factor {stream_factor} start vertex 415
+mesh curve 737
+
+reset curve 753
+curve 753 scheme bias fine size {stream_init} factor {stream_factor} start vertex 425
+mesh curve 753
+
+volume 23  redistribute nodes off 
+volume 23  scheme Sweep  source surface 438    target surface 440   sweep transform translate propagate bias  
+volume 23  autosmooth target off 
+mesh volume 23 
+
+volume 25  redistribute nodes off 
+volume 25  scheme Sweep  source surface 450    target surface 448   sweep transform translate propagate bias  
+volume 25  autosmooth target off 
+mesh volume 25 
+
+reset curve 834
+curve 834 scheme bias fine size {stream_init} factor {stream_factor} start vertex 465
+mesh curve 834
+
+reset curve 850
+curve 850 scheme bias fine size {stream_init} factor {stream_factor} start vertex 474
+mesh curve 850
+
+volume 61  autosmooth target off 
+volume 61  redistribute nodes off 
+volume 61  scheme Sweep  source surface 501    target surface 499   sweep transform translate propagate bias  
+volume 61  autosmooth target off 
+mesh volume 61 
+
+volume 62  redistribute nodes off 
+volume 62  scheme Sweep  source surface 509    target surface 511   sweep transform translate propagate bias  
+volume 62  autosmooth target off 
+mesh volume 62 
+
+reset curve 649
+curve 649 scheme bias fine size {stream_init} factor {stream_factor} start vertex 370
+mesh curve 649
+
+reset curve 615
+curve 615 scheme bias fine size {stream_init} factor {stream_factor} start vertex 352
+mesh curve 615
+
+volume 68  redistribute nodes off 
+volume 68  scheme Sweep  source surface 515    target surface 513   sweep transform translate propagate bias  
+volume 68  autosmooth target off 
+mesh volume 68 
+
+volume 67  redistribute nodes off 
+volume 67  scheme Sweep  source surface 503    target surface 505   sweep transform translate propagate bias  
+volume 67  autosmooth target off 
+mesh volume 67 
+
+reset curve 547
+curve 547 scheme bias fine size {stream_init} factor {stream_factor} start vertex 319
+mesh curve 547
+
+reset curve 513
+curve 513 scheme bias fine size {stream_init} factor {stream_factor} start vertex 305
+mesh curve 513
+
+volume 53  redistribute nodes off 
+volume 53  scheme Sweep  source surface 390    target surface 391   sweep transform translate propagate bias  
+volume 53  autosmooth target off 
+mesh volume 53 
+
+volume 50  redistribute nodes off 
+volume 50  scheme Sweep  source surface 369    target surface 368   sweep transform translate propagate bias  
+volume 50  autosmooth target off 
+mesh volume 50 
+
+###
+reset curve 174
+curve 174 scheme bias fine size {stream_init} factor {stream_factor} start vertex 89
+mesh curve 174
+
+reset curve 176
+curve 176 scheme bias fine size {stream_init} factor {stream_factor} start vertex 88
+mesh curve 176
+
+reset curve 194
+curve 194 scheme bias fine size {stream_init} factor {stream_factor} start vertex 126
+mesh curve 194
+
+reset curve 207
+curve 207 scheme bias fine size {stream_init} factor {stream_factor} start vertex 132
+mesh curve 207
+
+reset Surface 319
+surface 319  size 0.25
+mesh surface 319 
+surface 319 smooth scheme laplacian 
+smooth surface 319
+
+volume 45  redistribute nodes off 
+volume 45  scheme Sweep  source surface 319    target surface 317   sweep transform translate propagate bias  
+volume 45  autosmooth target off 
+mesh volume 45 
+
+surface 328  scheme map
+mesh surface 328 
+volume 46  redistribute nodes off 
+volume 46  scheme Sweep  source surface 328    target surface 330   sweep transform translate propagate bias  
+volume 46  autosmooth target off 
+mesh volume 46
+
+surface 310  scheme map
+mesh surface 310 
+volume 44  redistribute nodes off 
+volume 44  scheme Sweep  source surface 310    target surface 308   sweep transform translate propagate bias  
+volume 44  autosmooth target off 
+mesh volume 44 
+
+mesh Volume 49 48 47
+
+###Refine jet region radially
+set dev on
+sheet edge 766  dice interval 2
+sheet edge 715715  dice interval 2
+sheet edge 855270  dice interval 2
+sheet edge 855266  dice interval 2
+sheet edge 715717  dice interval 3
+sheet edge 761  dice interval 3
+set dev off
+
+##BL for Top Section
+set dev on
+sheet edge 312098  dice interval 2
+sheet edge 5348946 dice interval 2
+set dev off
+
+#BL for Sides
+set dev on
+sheet edge 382424  dice interval 2
+sheet edge 10941540  dice interval 2
+sheet edge 372059  dice interval 2
+sheet edge 14714692  dice interval 2
+set dev off
+
+#More Radial Jet Refinement
+set dev on
+sheet edge 205  dice interval 2
+sheet edge 207  dice interval 2
+set dev off
+
+#BL on the Back/Impingement
+set dev on
+sheet edge 311940  dice interval 2
+set dev off
+
+#BL on the Bottom
+set dev on
+sheet edge 584557  dice interval 2
+set dev off
+
+#BL on the Back/Impingement
+set dev on
+sheet edge 17934509  dice interval 2
+set dev off
+
+#BL on the Bottom
+set dev on
+sheet edge 18220668  dice interval 2
+set dev off
+
+#More Radial Jet Refinement
+set dev on
+sheet edge 196  dice interval 2
+sheet edge 42634  dice interval 2
+set dev off
+
+unite volume all include_mesh
+
+block 1 add volume 33
+block 1 element type HEX20
+
+#Add SideSets
+
+#inlet
+sideset 1 add surface 53
+sideset 1 name "inlet"
+
+#inlet pipe
+sideset 4 add surface 54
+sideset 4 name "inlet_pipe"
+
+#Cavity-Inlet Wall
+sideset 3 add surface 35 36 143 163 214 116 256
+sideset 3 name "walls"
+
+#Sol-Valve Outlet
+sideset 2 add surface 233
+sideset 2 name "outlet"
+
+##export
+set exodus netcdf4 off
+set large exodus file on
+export mesh "/Users/spatel/Desktop/Projects/2024/NEUP/meshing/FC_SolValve_2.5M.exo"  dimension 3  overwrite 
+
+
+
+
+

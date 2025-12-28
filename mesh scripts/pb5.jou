@@ -1,0 +1,156 @@
+############################################## 5 pebbles in pipe
+reset
+############################################## geometry
+# {L = 1}
+# {Rcyl = 0.5} 
+# {Rsphere = 0.05}
+# {box = 3*Rsphere}
+
+################################################# create and mesh pebbles
+# pebble 1
+create sphere radius {Rsphere}
+brick x {box} y {box} z {box}
+subtract volume 1 from volume 2 imprint 
+
+webcut volume 3  with plane xplane offset 0 
+webcut volume 3  with plane yplane offset 0  
+webcut volume 3  with plane zplane offset 0 
+delete volume 4 to 6
+
+# mesh
+volume 3  scheme polyhedron 
+volume 3 size auto factor 7 propagate 
+mesh volume 3
+
+Volume 3 copy reflect x 
+Volume 3 7 copy reflect z
+Volume 3 7 8 9 copy reflect y 
+
+merge all
+unite volume 3 7 8 9 10 11 12 13 include_mesh 
+
+# duplicate pebble with mesh
+Volume 14 copy move x {box} y 0 z 0 
+Volume 14 copy move x {-box} y 0 z 0 
+Volume 14 copy move x 0 y 0 z {box} 
+Volume 14 copy move x 0 y 0 z {-box} 
+
+imprint all
+merge all
+################################################################### create pipe
+create Cylinder height {L} radius {Rcyl}
+
+#side cylinders
+webcut Volume 19  offset_tool Surface 124  offset {(L-3*box)/2} inward merge 
+webcut Volume 21  offset_tool Surface 123  offset {(L-3*box)/2} inward merge 
+
+#center cylinder
+webcut volume 23  with plane from surface 67 
+webcut volume 24  with plane from surface 34 
+webcut volume 24  with plane from surface 98 
+webcut volume 24  with plane from surface 103 
+
+subtract volume 14 to 18 from volume 27  imprint keep_tool 
+split body 25
+delete volume 30 33 to 36
+
+undo group begin
+imprint volume 31 16 28 18 14 17 32 15 29  keep
+merge volume 31 16 28 18 14 17 32 15 29  
+undo group end
+
+# mesh cubes
+volume 31  redistribute nodes off 
+volume 31  scheme Sweep  source surface 106    target surface 186   sweep transform least squares 
+volume 31  autosmooth target off  fixed imprints off  smart smooth off 
+mesh volume 31 
+volume 32  redistribute nodes off 
+volume 32  scheme Sweep  source surface 99    target surface 195   sweep transform least squares 
+volume 32  autosmooth target off  fixed imprints off  smart smooth off 
+mesh volume 32 
+volume 28  redistribute nodes off 
+volume 28  scheme Sweep  source surface 102    target surface 174   sweep transform least squares 
+volume 28  autosmooth target off  fixed imprints off  smart smooth off 
+mesh volume 28 
+volume 29  redistribute nodes off 
+volume 29  scheme Sweep  source surface 95    target surface 178   sweep transform least squares 
+volume 29  autosmooth target off  fixed imprints off  smart smooth off 
+mesh volume 29 
+
+imprint all
+merge all
+
+unite volume 23 24 25 26
+
+curve 448  interval 72 scheme equal
+mesh curve 448 
+
+surface 243  scheme auto 
+mesh surface 243 
+volume 23  redistribute nodes off 
+volume 23  scheme Sweep  source surface 243    target surface 244   sweep transform least squares 
+volume 23  autosmooth target off  fixed imprints off  smart smooth off 
+mesh volume 23 
+
+#mesh side cylinders
+unmerge volume 19 21
+regularize volume 19 21 
+
+imprint all
+merge all
+
+volume 19  redistribute nodes off 
+volume 19  scheme Sweep  source surface 113 186 195 244    target surface 124   sweep transform least squares 
+volume 19  autosmooth target off  fixed imprints off  smart smooth off 
+mesh volume 19 
+
+volume 21  redistribute nodes off 
+volume 21  scheme Sweep  source surface 116 174 178 243    target surface 123   sweep transform least squares 
+volume 21  autosmooth target off  fixed imprints off  smart smooth off 
+mesh volume 21 
+############################################################ boundaries
+block 1 add volume all 
+block 1 element type HEX20
+
+sideset 1 add surface 123
+sideset 1 name "inlet"
+
+sideset 2 add surface 124
+sideset 2 name "outlet"
+
+sideset 3 add surface 127 132 138
+sideset 3 name "cylinder"
+
+# (0,0,0)
+sideset 4 add surface 37
+sideset 4 name "sphere1"
+
+# (0.15,0,0)
+sideset 5 add surface 100
+sideset 5 name "sphere2"
+
+# (-0.15,0,0)
+sideset 6 add surface 107
+sideset 6 name "sphere3"
+
+# (0,0,0.15)
+sideset 7 add surface 114
+sideset 7 name "sphere4"
+
+# (0,0,-0.15)
+sideset 8 add surface 121
+sideset 8 name "sphere5"
+
+# export mesh as exodus file
+set exodus netcdf4 off
+set large exodus file on
+export mesh "/home/hailu/Desktop/pb5.exo"  dimension 3  overwrite 
+
+#Executive Exodus summary:
+#  Number of dimensions     = 3
+#  Number of element blocks = 1
+#  Number of sidesets       = 8
+#  Number of nodesets       = 0
+#  Number of bc sets        = 1
+#  Number of elements       = 31328
+#  Number of nodes          = 133307

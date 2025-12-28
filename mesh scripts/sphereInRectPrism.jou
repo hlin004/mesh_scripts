@@ -1,0 +1,102 @@
+############################################## sphere in cube 3D
+reset
+############################################## geometry - single pebble
+# {L = 1}
+# {D = 0.25} 
+# {R = D/2}
+# {box = 6*R}
+
+brick x {L} y {L} z {L}
+create sphere radius {R}
+brick x {box} y {box} z {box}
+
+move Volume 2 3 y -0.125 include_merged 
+subtract volume 2 from volume 1 3 imprint 
+chop volume 4  with volume 5 
+
+webcut volume 7  with plane from surface 11  group_results
+webcut volume 7  with plane from surface 13  group_results 
+webcut volume 7 8 9  with plane from surface 8  group_results 
+webcut volume 10 11 12 with plane from surface 9  group_results 
+webcut volume 8 11 14 13 15 12 9 7 10 with plane from surface 12  group_results 
+
+################################################################### mesh pebble
+webcut volume 6  with plane xplane offset 0 
+webcut volume 6  with plane yplane offset -0.125  
+webcut volume 6  with plane zplane offset 0 
+delete volume 24 to 26
+
+volume 6  scheme polyhedron 
+volume 6 size auto factor 4 propagate 
+mesh volume 6
+
+# group the outer layer
+# picked add Volume 12 Volume 8 Volume 7 Volume 18 Volume 11 Volume 21 Volume 15 Volume 23 Volume 22 Volume 17 Volume 20 Volume 16 Volume 14 Volume 19 Volume 9 Volume 13 Volume 10 
+
+Volume 6 copy reflect x 
+Volume 27 6  copy reflect vertex 187 185  
+Volume 6 27 28 29 copy reflect z 
+
+merge all
+unite volume 6 27 28 29 30 31 32 33 include_mesh 
+
+################################################################### mesh outside
+merge all
+
+# top
+volume 10 redistribute nodes off 
+volume 10 scheme Sweep sweep transform least squares 
+volume 10 autosmooth target on  fixed imprints off  smart smooth off 
+volume 10 interval 8
+mesh volume 10
+
+# sides
+volume 7 11 12 13 redistribute nodes off 
+volume 7 11 12 13 scheme Sweep sweep transform least squares 
+volume 7 11 12 13 autosmooth target on  fixed imprints off  smart smooth off 
+volume 7 11 12 13 interval 5 
+mesh volume 7 11 12 13
+
+# corners
+volume 8, 9, 14 to 23 scheme auto 
+mesh volume 8, 9, 14 to 23
+
+#draw hex all
+
+############################################################ boundaries
+block 1 add volume all 
+block 1 element type HEX20
+
+# left
+sideset 1 add surface 99 106 109 116 121 123
+sideset 1 name "left"
+
+# right
+sideset 2 add surface 139 146 151 153 161 163
+sideset 2 name "right"
+
+# top
+sideset 3 add surface 44 53 63 73 74 79 85 89 95
+sideset 3 name "top"
+
+# bottom
+sideset 4 add surface 35 36 51 61 81 83 91 93 202
+sideset 4 name "bottom"
+
+# front
+sideset 5 add surface 98 105 158 165 169 176
+sideset 5 name "front"
+
+# back
+sideset 6 add surface 118 126 131 133 138 145
+sideset 6 name "back"
+
+# sphere
+sideset 7 add surface 205
+sideset 7 name "sphere"
+
+# export mesh as exodus file
+set exodus netcdf4 off
+set large exodus file on
+export mesh "/home/hailu/Desktop/sphere_in_cube.exo"  dimension 3  overwrite 
+
