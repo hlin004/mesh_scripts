@@ -1,0 +1,40 @@
+############################################## jet in cube
+reset
+############################################## geometry
+# {L = 1}
+brick x {L} y {L} z {L}
+move Volume 1 location 0.5 0.5 0.5 include_merged 
+#################################### mesh
+volume 1 interval 128 
+mesh volume 1
+############################################################ boundaries
+block 1 add volume all 
+block 1 element type HEX20
+
+sideset 1 add surface 4
+sideset 1 name "x0"
+
+sideset 2 add surface 6
+sideset 2 name "x1"
+
+sideset 3 add surface 3
+sideset 3 name "y0"
+
+sideset 4 add surface 5
+sideset 4 name "y1"
+
+sideset 5 add surface 2
+sideset 5 name "z0"
+
+# back
+sideset 6 add surface 1
+sideset 6 name "z1"
+
+
+# export mesh as exodus file
+set exodus netcdf4 off
+set large exodus file on
+export mesh "/home/hailu/Desktop/tgv.exo"  dimension 3  overwrite 
+
+
+

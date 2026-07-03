@@ -1,0 +1,143 @@
+# 2.5D cavity
+###################################################################
+reset
+#################################################
+create vertex -26 	31.007250	0
+create vertex -21.95 	31.007250	0
+create vertex -21.95	129.900000 	0
+create vertex 21.95	129.900000	0
+create vertex 21.95	31.007250	0
+create vertex 21.95	30.007250	0
+create vertex 21.95	3.253623 	0
+create vertex 26	3.253623 	0
+create vertex 26	2.253623 	0
+create vertex 21.95	2.253623 	0
+create vertex 21.95	0 	0
+create vertex -21.95	0	0
+create vertex -21.95	2.253623	0
+create vertex -21.95	3.253623	0
+create vertex -21.95	30.007250	0
+create vertex -26	30.007250	0
+
+create surface vertex 1 2 15 16
+create surface vertex 2 3 4 5
+create surface vertex 2 5 6 15
+create surface vertex 15 6 7 14
+create surface vertex 14 7 10 13
+create surface vertex 7 8 9 10
+create surface vertex 13 10 11 12
+
+thicken volume in surface all  depth 5 both 
+
+
+imprint all
+merge all
+
+###########################################################################
+# Mesh
+####################### vertical direction
+# inlet pipe
+curve 30 32 56 interval 10 scheme dualbias 1.2
+mesh curve 30 32 56
+
+# top cavity
+curve 41 43 interval 20 scheme bias 1.3 start vertex 30 39
+mesh curve 41 43
+
+# mid cavity
+curve 66 68 interval 20 scheme dualbias 1.4 
+mesh curve 66 68
+
+# bot cavity
+curve 102 104 interval 5 scheme dualbias 1.4
+mesh curve 102 104
+
+# outlet pipe
+curve 78 80 92 interval 10 scheme dualbias 1.2
+mesh curve 78 80 92
+
+################### horizontal direction
+# inlet pipe
+curve 29 31 size 1 scheme equal
+mesh curve 29 31
+
+# outlet pipe
+curve 89 91 size 1 scheme equal
+mesh curve 89 91
+
+# cavity
+curve 42 44 55 67 79 103 size 2 scheme dualbias 1.05
+mesh curve 42 44 55 67 79 103
+
+mesh surface 1 2 3 4 5 6 7
+
+##############################volume sweep
+volume 2  redistribute nodes off 
+volume 2  scheme Sweep  source surface 2    target surface 13   sweep transform translate propagate bias  
+volume 2  autosmooth target off 
+volume 2  interval 5 
+mesh volume 2 
+
+volume 1  redistribute nodes off 
+volume 1  scheme Sweep  source surface 1    target surface 8   sweep transform translate propagate bias  
+volume 1  autosmooth target off 
+volume 1  interval 5 
+mesh volume 1
+
+volume 3 redistribute nodes off 
+volume 3 scheme Sweep  source surface 3    target surface 18  sweep transform translate propagate bias  
+volume 3 autosmooth target off 
+volume 3 interval 5 
+mesh volume 3
+
+volume 4 redistribute nodes off 
+volume 4 scheme Sweep  source surface 4    target surface 23  sweep transform translate propagate bias  
+volume 4 autosmooth target off 
+volume 4 interval 5 
+mesh volume 4
+
+volume 5 redistribute nodes off 
+volume 5 scheme Sweep  source surface 5    target surface 28  sweep transform translate propagate bias  
+volume 5 autosmooth target off 
+volume 5 interval 5 
+mesh volume 5
+
+volume 7 redistribute nodes off 
+volume 7 scheme Sweep  source surface 7    target surface 38  sweep transform translate propagate bias  
+volume 7 autosmooth target off 
+volume 7 interval 5 
+mesh volume 7
+
+volume 6 redistribute nodes off 
+volume 6 scheme Sweep  source surface 6    target surface 33  sweep transform translate propagate bias  
+volume 6 autosmooth target off 
+volume 6 interval 5 
+mesh volume 6
+
+###########################################################################
+block 1 add volume all
+block 1 element type HEX20
+
+sideset 1 add surface 12
+sideset 1 name "inlet"
+
+sideset 2 add surface 35
+sideset 2 name "outlet"
+
+sideset 3 add surface 14 15 16 20 25 27 32 34 36 40 41 42
+sideset 3 name "walls"
+
+sideset 4 add surface 9 11
+sideset 4 name "inlet_pipe_wall"
+
+sideset 5 add surface 1 2 3 4 5 6 7
+sideset 5 name "front"
+
+sideset 6 add surface 8 13 18 23 28 33 38
+sideset 6 name "back"
+
+###export
+set exodus netcdf4 off
+set large exodus file on
+export mesh "/home/hailu/Desktop/fc_2.5D.exo"  dimension 3  overwrite 
+#elements:7550

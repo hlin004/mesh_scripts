@@ -1,0 +1,30 @@
+################################### simple 3D cavity case
+reset
+###################################### geometry
+# {R_inlet = 1/2 }
+# {R_outlet = .9202/2 }
+
+brick x 43.9 y 43.9 z 129.9
+create Cylinder height 8.05 radius {R_inlet}
+create Cylinder height 8.05 radius {R_outlet}
+
+rotate Volume 2 angle 90  about X include_merged 
+rotate Volume 3 angle 90  about X include_merged 
+
+move Volume 1 location 0 0 64.95 include_merged 
+move Volume 2 location 0 -25.975 30.50725 include_merged 
+move Volume 3 location 0 25.975 2.753623 include_merged 
+
+imprint volume all 
+merge volume all 
+####################################### mesh
+# inlet
+surface 9  scheme circle 
+surface 9 size auto factor 5
+mesh surface 9
+
+volume 2  redistribute nodes off 
+volume 2  scheme Sweep  source surface 9    target surface 8  sweep transform least squares 
+volume 2  autosmooth target off  fixed imprints off  smart smooth off 
+volume 2  size auto factor 5
+mesh volume 2 
